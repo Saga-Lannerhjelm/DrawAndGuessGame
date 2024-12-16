@@ -17,8 +17,14 @@ namespace webbAPI.Hubs
         //     return base.OnConnectedAsync();
         // }
         
-        public async Task Drawing(Point start, Point end, string color) {
-            await Clients.Others.SendAsync("Drawing", start, end, color);
+        public async Task JoinGame (string role, string gameRoom) {
+
+            await Groups.AddToGroupAsync(Context.ConnectionId, gameRoom);
+            await Clients.OthersInGroup(gameRoom).SendAsync("JoinedGame", $"{Context.ConnectionId} anslöt som {role}", role);
+
+        }
+        public async Task Drawing(Point start, Point end, string color, string gameRoom) {
+            await Clients.OthersInGroup(gameRoom).SendAsync("Drawing", start, end, color);
         }
     }
 }
