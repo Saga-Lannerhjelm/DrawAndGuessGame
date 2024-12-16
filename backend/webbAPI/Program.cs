@@ -13,7 +13,7 @@ builder.Services.AddSignalR();
 
 builder.Services.AddCors(opt => {
     opt.AddPolicy("react-app", builder => {
-        builder.WithOrigins("http://localhost:5173/")
+        builder.WithOrigins("http://localhost:5173")
         .AllowAnyHeader()
         .AllowAnyMethod()
         .AllowCredentials();
