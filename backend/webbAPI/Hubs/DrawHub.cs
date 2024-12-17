@@ -17,10 +17,11 @@ namespace webbAPI.Hubs
         //     return base.OnConnectedAsync();
         // }
         
-        public async Task JoinGame (string role, string gameRoom) {
+        public async Task JoinGame (string userName, string gameRoomCode) {
 
-            await Groups.AddToGroupAsync(Context.ConnectionId, gameRoom);
-            await Clients.OthersInGroup(gameRoom).SendAsync("JoinedGame", $"{Context.ConnectionId} anslöt som {role}", role);
+            await Groups.AddToGroupAsync(Context.ConnectionId, gameRoomCode);
+            await Clients.OthersInGroup(gameRoomCode).SendAsync("JoinedGame", $"{userName} anslöt till spelet");
+            await Clients.Caller.SendAsync("JoinedGame", $"Välkommen till spelet. Anslutningkoden är {gameRoomCode}");
 
         }
         public async Task Drawing(Point start, Point end, string color, string gameRoom) {
