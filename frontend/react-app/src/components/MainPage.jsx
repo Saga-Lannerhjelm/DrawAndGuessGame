@@ -1,10 +1,13 @@
 import React, { useState } from "react";
 import { HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
+import { useNavigate } from "react-router-dom";
 
 const Home = () => {
   const [userName, setUserName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [connection, setConnection] = useState(undefined);
+
+  const navigate = useNavigate();
 
   // Also check so that it is unique compared to the existing games in the database
   const createRoom = async (userName) => {
@@ -32,6 +35,7 @@ const Home = () => {
         await connection.start();
         connection.invoke("JoinGame", userName, gameRoomCode.toString());
         setConnection(connection);
+        navigate(`/game/${gameRoomCode}`);
       } catch (error) {
         console.error();
       }
