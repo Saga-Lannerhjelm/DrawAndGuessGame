@@ -1,3 +1,4 @@
+using webbAPI.DataService;
 using webbAPI.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,6 +11,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddSignalR();
+builder.Services.AddSingleton<SharedDB>();
 
 builder.Services.AddCors(opt => {
     opt.AddPolicy("react-app", builder => {
