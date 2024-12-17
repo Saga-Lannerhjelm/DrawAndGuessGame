@@ -39,6 +39,7 @@ const Game = () => {
 
   async function getColor() {
     try {
+      // Link to API https://github.com/cheatsnake/xColors-api
       const response = await fetch(
         "https://x-colors.yurace.pro/api/random/?type=dark"
       );

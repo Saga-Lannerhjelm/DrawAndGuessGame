@@ -52,6 +52,7 @@ const Home = () => {
 
   async function getRandomUsername() {
     try {
+      // Link to API https://github.com/randomusernameapi/randomusernameapi.github.io?tab=readme-ov-file
       const response = await fetch(
         "https://usernameapiv1.vercel.app/api/random-usernames"
       );
