@@ -1,13 +1,19 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
 import { useNavigate } from "react-router-dom";
 
 const Home = () => {
   const [userName, setUserName] = useState("");
+  const [randomUsername, setRandomUsername] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [connection, setConnection] = useState(undefined);
+  const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    getRandomUsername().then((userN) => setRandomUsername(userN));
+  }, []);
 
   // Also check so that it is unique compared to the existing games in the database
   const createRoom = async (userName) => {
@@ -15,8 +21,10 @@ const Home = () => {
     startConnection(userName, gameRoomCode);
   };
 
-  const joinRoom = async (userName, gameRoomCode) => {
-    startConnection(userName, gameRoomCode);
+  const joinRoom = async (gameRoomCode) => {
+    if (!loading) {
+      startConnection(randomUsername, gameRoomCode);
+    }
   };
 
   async function startConnection(userName, gameRoomCode) {
@@ -39,6 +47,23 @@ const Home = () => {
       } catch (error) {
         console.error();
       }
+    }
+  }
+
+  async function getRandomUsername() {
+    try {
+      const response = await fetch(
+        "https://usernameapiv1.vercel.app/api/random-usernames"
+      );
+
+      if (!response.ok) throw new Error(`Response status: ${response.status}`);
+      const result = await response.json();
+      return result.usernames[0];
+    } catch (error) {
+      console.error(error);
+      return null;
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -70,14 +95,9 @@ const Home = () => {
           className="standard-form"
           onSubmit={(e) => {
             e.preventDefault();
-            joinRoom(userName, inviteCode);
+            joinRoom(inviteCode);
           }}
         >
-          <input
-            type="text"
-            placeholder="Användarnamn"
-            onChange={(e) => setUserName(e.target.value)}
-          />
           <input
             type="text"
             placeholder="Anslutningskod"
