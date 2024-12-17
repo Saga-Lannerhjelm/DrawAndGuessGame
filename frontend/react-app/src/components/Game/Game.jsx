@@ -1,41 +1,28 @@
 import React, { useEffect, useRef, useState } from "react";
 import { HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
+import { useConnection } from "../../context/ConnectionContext";
+import { useParams } from "react-router-dom";
 
 const Game = () => {
   const [color, setColor] = useState("#ffffff");
-  const [connection, setConnection] = useState(undefined);
+  // const [connection, setConnection] = useState(undefined);
   const [gameRoom, setGameRoom] = useState("");
   const [gameActive, setGameActive] = useState(false);
   const [loading, setLoading] = useState(true);
   const canvasRef = useRef(null);
 
-  async function startConnection(role, gameRoom) {
-    setGameRoom(gameRoom);
-    if (!connection) {
-      const connection = new HubConnectionBuilder()
-        .withUrl("http://localhost:5034/draw")
-        .configureLogging(LogLevel.Information)
-        .withAutomaticReconnect()
-        .build();
+  const { connection } = useConnection();
+  const params = useParams();
 
+  useEffect(() => {
+    if (connection) {
+      setGameActive(true);
+      setGameRoom(params.room);
       connection.on("Drawing", (start, end, color) => {
         drawStroke(start, end, color);
       });
-
-      connection.on("JoinedGame", (msg, role) => {
-        console.log(msg);
-      });
-
-      try {
-        await connection.start();
-        connection.invoke("JoinGame", role, gameRoom);
-        setConnection(connection);
-        setGameActive(true);
-      } catch (error) {
-        console.error();
-      }
     }
-  }
+  }, [connection]);
 
   async function getColor() {
     try {
@@ -111,12 +98,8 @@ const Game = () => {
   return (
     <>
       <div>
-        <button onClick={() => startConnection("artist", "123")}>
-          Starta som ritare
-        </button>
-        <button onClick={() => startConnection("guesser", "123")}>
-          Starta som gissare
-        </button>
+        <button>Starta som ritare</button>
+        <button>Starta som gissare</button>
         {gameActive && (
           <canvas
             ref={canvasRef}

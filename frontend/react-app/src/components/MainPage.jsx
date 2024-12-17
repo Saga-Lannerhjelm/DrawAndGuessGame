@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
 import { useNavigate } from "react-router-dom";
+import { useConnection } from "../context/ConnectionContext";
 
 const Home = () => {
   const [userName, setUserName] = useState("");
   const [randomUsername, setRandomUsername] = useState("");
   const [inviteCode, setInviteCode] = useState("");
-  const [connection, setConnection] = useState(undefined);
+  // const [connection, setConnection] = useState(undefined);
   const [loading, setLoading] = useState(true);
+
+  const { setConnection, connection } = useConnection();
 
   const navigate = useNavigate();
 
