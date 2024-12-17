@@ -44,7 +44,8 @@ const Home = () => {
 
       try {
         await connection.start();
-        connection.invoke("JoinGame", userName, gameRoomCode.toString());
+        const gameRoom = gameRoomCode.toString();
+        connection.invoke("JoinGame", { userName, gameRoom, role: "hello" });
         setConnection(connection);
         navigate(`/game/${gameRoomCode}`);
       } catch (error) {
