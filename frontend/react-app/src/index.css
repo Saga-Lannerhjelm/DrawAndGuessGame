@@ -6,6 +6,7 @@
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
   background-color: #242424;
+  --header-color: #3a3a3a;
   --accentcolor: #b074ff;
   --bordercolor: #795c9f;
   --inputbackground: #ffffff;
@@ -20,6 +21,7 @@
   :root {
     color: #213547;
     background-color: #ffffff;
+    --header-color: #a8a8a8;
     --accentcolor: #d2afff;
     --bordercolor: #b074ff;
     --inputbackground: #e6e6e6;

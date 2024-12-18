@@ -1,7 +1,20 @@
-import React from "react";
+import React, { useState } from "react";
 
 const GuessForm = () => {
-  return <div>GuessForm</div>;
+  const [guess, setGuess] = useState("");
+  return (
+    <form className="guess-form">
+      <input
+        type="text"
+        placeholder="Gissa"
+        onChange={(e) => setGuess(e.target.value)}
+        value={guess}
+      />
+      <button type="submit" className="btn">
+        Skicka
+      </button>
+    </form>
+  );
 };
 
 export default GuessForm;

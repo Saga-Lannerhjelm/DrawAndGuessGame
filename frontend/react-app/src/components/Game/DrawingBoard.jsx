@@ -2,9 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { useConnection } from "../../context/ConnectionContext";
 import { useParams } from "react-router-dom";
 
-const DrawingBoard = () => {
+const DrawingBoard = ({ gameRoom, setGameRoom }) => {
   const [color, setColor] = useState("#ffffff");
-  const [gameRoom, setGameRoom] = useState("");
   const [gameActive, setGameActive] = useState(false);
   const [loading, setLoading] = useState(true);
   const canvasRef = useRef(null);
@@ -44,8 +43,15 @@ const DrawingBoard = () => {
     if (gameActive) {
       getColor().then((color) => setColor(color));
       const canvas = canvasRef.current;
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight - 200;
+
+      const handelResize = () => {
+        canvas.width = document.getElementById("canvas-container").offsetWidth;
+        canvas.height =
+          document.getElementById("canvas-container").offsetHeight;
+      };
+
+      handelResize();
+      window.addEventListener("resize", handelResize);
 
       let penDown = false;
       let prevPoint = { x: 0, y: 0 };
@@ -62,7 +68,7 @@ const DrawingBoard = () => {
         };
 
         if (penDown && connection && !loading) {
-          drawStroke(start, end, "#ffffff");
+          drawStroke(start, end, "red");
           console.log(color);
           connection.invoke("Drawing", start, end, color, gameRoom);
         }
@@ -85,7 +91,7 @@ const DrawingBoard = () => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     ctx.strokeStyle = color;
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 4;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.beginPath();
@@ -96,14 +102,9 @@ const DrawingBoard = () => {
   return (
     <>
       <div>
-        <button>Starta som ritare</button>
-        <button>Starta som gissare</button>
-        {gameActive && (
-          <canvas
-            ref={canvasRef}
-            style={{ border: "1px solid white" }}
-          ></canvas>
-        )}
+        {/* <button>Starta som ritare</button>
+        <button>Starta som gissare</button> */}
+        {gameActive && <canvas ref={canvasRef} className="canvas"></canvas>}
       </div>
     </>
   );
