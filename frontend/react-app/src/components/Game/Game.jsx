@@ -21,9 +21,11 @@ const Game = () => {
           </div>
           <GuessForm />
         </div>
-        <GuessContainer />
+        <GuessContainer gameRoom={gameRoom} />
       </div>
-      {/* <button onClick={() => connection.invoke("StartRound", "123")}></button> */}
+      <button onClick={() => connection.invoke("StartRound", gameRoom)}>
+        Välj ritare
+      </button>
     </>
   );
 };

@@ -9,6 +9,8 @@ namespace webbAPI.Models
     {
         public string Username { get; set; } = string.Empty;
         public string GameRoom { get; set; } = string.Empty;
-        public string Role { get; set; } = string.Empty;
+        public bool IsDrawing { get; set; } = false;
+        public int Points { get; set; } = 0;
+        public bool HasGuessedCorrectly { get; set; } = false;
     }
 }
