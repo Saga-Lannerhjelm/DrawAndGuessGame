@@ -32,22 +32,28 @@ const GuessContainer = ({ userIsDrawing, userGuess }) => {
     <div className="user-container">
       Spelare ({users.length})
       {users.map((user, index) => (
-        <div
-          className={user.isDrawing ? "user drawing" : "user"}
-          style={user.hasGuessedCorrectly ? { borderColor: "#00FF2F" } : {}}
-          key={index}
-        >
-          {userGuess.user === user.username && (
-            <Message message={userGuess.guess} />
-          )}
-          <div>
-            <p>
-              {user.username} {user.username == activeUser ? "(Du)" : ""}
-            </p>
-            <p>{user.points} poäng</p>
+        <>
+          <div className="message-and-user">
+            {userGuess.user === user.username ? (
+              <Message message={userGuess.guess} />
+            ) : (
+              <div></div>
+            )}
+            <div
+              className={user.isDrawing ? "user drawing" : "user"}
+              style={user.hasGuessedCorrectly ? { borderColor: "#00FF2F" } : {}}
+              key={index}
+            >
+              <div>
+                <p>
+                  {user.username} {user.username == activeUser ? "(Du)" : ""}
+                </p>
+                <p>{user.points} poäng</p>
+              </div>
+              {user.isDrawing && <span>ritar</span>}
+            </div>
           </div>
-          {user.isDrawing && <span>ritar</span>}
-        </div>
+        </>
       ))}
     </div>
   );
