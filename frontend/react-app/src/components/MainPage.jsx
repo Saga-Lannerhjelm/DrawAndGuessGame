@@ -42,6 +42,10 @@ const Home = () => {
         console.log(msg);
       });
 
+      connection.onclose(() => {
+        setConnection();
+      });
+
       try {
         await connection.start();
         const gameRoom = gameRoomCode.toString();

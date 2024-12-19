@@ -16,6 +16,12 @@ const Game = () => {
   const [isDrawing, setIsDrawing] = useState(false);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (connection == undefined) {
+      navigate("/home");
+    }
+  }, [connection]);
+
   const leaveRoom = async () => {
     console.log("leave");
     await connection.stop();
