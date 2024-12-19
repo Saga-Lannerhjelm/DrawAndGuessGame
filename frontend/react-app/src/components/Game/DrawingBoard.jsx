@@ -56,38 +56,41 @@ const DrawingBoard = ({ gameRoom, setGameRoom, isDrawing }) => {
       let penDown = false;
       let prevPoint = { x: 0, y: 0 };
 
-      function draw(x, y) {
-        const start = {
-          x: prevPoint.x - canvas.offsetLeft,
-          y: prevPoint.y - canvas.offsetTop,
-        };
+      if (isDrawing) {
+        function draw(x, y) {
+          const start = {
+            x: prevPoint.x - canvas.offsetLeft,
+            y: prevPoint.y - canvas.offsetTop,
+          };
 
-        const end = {
-          x: x - canvas.offsetLeft,
-          y: y - canvas.offsetTop,
-        };
+          const end = {
+            x: x - canvas.offsetLeft,
+            y: y - canvas.offsetTop,
+          };
 
-        if (penDown && connection && !loading) {
-          drawStroke(start, end, "red");
-          console.log(color);
-          connection.invoke("Drawing", start, end, color, gameRoom);
+          if (penDown && connection && !loading) {
+            drawStroke(start, end, "red");
+            connection.invoke("Drawing", start, end, color, gameRoom);
+          }
+          prevPoint = { x: x, y: y };
         }
-        prevPoint = { x: x, y: y };
-      }
 
-      canvas.addEventListener("mousedown", () => (penDown = true));
-      canvas.addEventListener("mousemove", (e) => draw(e.pageX, e.pageY));
-      canvas.addEventListener("mouseup", () => (penDown = false));
-
-      return () => {
         canvas.addEventListener("mousedown", () => (penDown = true));
         canvas.addEventListener("mousemove", (e) => draw(e.pageX, e.pageY));
         canvas.addEventListener("mouseup", () => (penDown = false));
-      };
+        return () => {
+          canvas.addEventListener("mousedown", () => (penDown = true));
+          canvas.addEventListener("mousemove", (e) => draw(e.pageX, e.pageY));
+          canvas.addEventListener("mouseup", () => (penDown = false));
+        };
+      }
     }
-  }, [connection, gameActive, loading]);
+  }, [connection, gameActive, loading, isDrawing]);
 
   function drawStroke(start, end, color) {
+    if (!isDrawing) {
+      color = "black";
+    }
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     ctx.strokeStyle = color;
