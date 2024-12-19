@@ -38,7 +38,7 @@ const Home = () => {
         .withAutomaticReconnect()
         .build();
 
-      connection.on("JoinedGame", (msg) => {
+      connection.on("GameStatus", (msg) => {
         console.log(msg);
       });
 

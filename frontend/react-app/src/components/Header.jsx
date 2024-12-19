@@ -1,7 +1,12 @@
 import React from "react";
 
-const Header = ({ gameRoom }) => {
-  return <div className="header">JoinCode: {gameRoom}</div>;
+const Header = ({ gameRoom, onclick }) => {
+  return (
+    <div className="header">
+      JoinCode: {gameRoom}{" "}
+      <button onClick={() => onclick()}>Lämna spelet</button>
+    </div>
+  );
 };
 
 export default Header;

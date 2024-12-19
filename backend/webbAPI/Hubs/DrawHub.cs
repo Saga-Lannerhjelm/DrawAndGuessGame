@@ -23,8 +23,8 @@ namespace webbAPI.Hubs
             _sharedDB.Connection[Context.ConnectionId] = userConn;
 
 
-            await Clients.OthersInGroup(userConn.GameRoom).SendAsync("JoinedGame", $"{userConn.Username} anslöt till spelet");
-            await Clients.Caller.SendAsync("JoinedGame", $"Välkommen till spelet. Anslutningkoden är {userConn.GameRoom}");
+            await Clients.OthersInGroup(userConn.GameRoom).SendAsync("GameStatus", $"{userConn.Username} anslöt till spelet");
+            await Clients.Caller.SendAsync("GameStatus", $"Välkommen till spelet. Anslutningkoden är {userConn.GameRoom}");
 
             await UsersInGame(userConn.GameRoom);
         }
@@ -57,6 +57,9 @@ namespace webbAPI.Hubs
                 var drawingUserOne = selectedUser1.Username;
                 var drawingUserTwo = selectedUser2.Username;
 
+                // Make sure that only the ones that hasn't drawn yet are selected
+                // Maybe filter out the ones that already have drawn
+
                 await Clients.Group(gameRoom).SendAsync("GameCanStart", true);
                 await Clients.Group(gameRoom).SendAsync("GameStatus", $"{drawingUserOne} och {drawingUserTwo} ritar!");
                 await UsersInGame(gameRoom);
@@ -86,6 +89,18 @@ namespace webbAPI.Hubs
 
             await Clients.OthersInGroup(gameRoom).SendAsync("UsersInGame", userValues, "");
             await Clients.Caller.SendAsync("UsersInGame", userValues, activeUSer);
+        }
+
+        public override Task OnDisconnectedAsync(Exception? exception)
+        {
+             if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? userConn))
+            {
+                _sharedDB.Connection.Remove(Context.ConnectionId, out _);
+                Clients.Group(userConn.GameRoom).SendAsync("GameStatus", $"{userConn.Username} har lämnat spelet");
+
+                UsersInGame(userConn.GameRoom);
+            }
+            return base.OnDisconnectedAsync(exception);
         }
     }
 }
