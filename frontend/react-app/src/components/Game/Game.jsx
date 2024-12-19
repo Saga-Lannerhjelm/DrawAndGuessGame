@@ -14,11 +14,20 @@ const Game = () => {
   const { connection } = useConnection();
   const [gameRoom, setGameRoom] = useState("");
   const [isDrawing, setIsDrawing] = useState(false);
+  const [gameActive, setGameActive] = useState(false);
+
   const navigate = useNavigate();
+  const params = useParams();
 
   useEffect(() => {
-    if (connection == undefined) {
+    if (connection === undefined) {
       navigate("/home");
+    }
+    if (connection) {
+      setGameRoom(params.room);
+      connection.on("GameCanStart", (canStart) => {
+        setGameActive(canStart);
+      });
     }
   }, [connection]);
 
@@ -37,18 +46,25 @@ const Game = () => {
   return (
     <>
       <Header gameRoom={gameRoom} onclick={leaveRoom} />
-      <button onClick={startRound}>Välj ritare</button>
       <div className="game-container">
         <div>
-          <TopSection />
-          <div id="canvas-container">
-            <DrawingBoard
-              gameRoom={gameRoom}
-              setGameRoom={setGameRoom}
-              isDrawing={isDrawing}
-            />
-          </div>
-          {!isDrawing && <GuessForm />}
+          {gameActive ? (
+            <>
+              <TopSection />
+              <div id="canvas-container">
+                <DrawingBoard
+                  gameRoom={gameRoom}
+                  gameActive={gameActive}
+                  isDrawing={isDrawing}
+                />
+              </div>
+              {!isDrawing && <GuessForm />}
+            </>
+          ) : (
+            <button onClick={startRound} className="btn">
+              Starta spelet
+            </button>
+          )}
         </div>
         <GuessContainer
           gameRoom={gameRoom}

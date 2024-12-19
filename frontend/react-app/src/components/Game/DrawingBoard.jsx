@@ -3,19 +3,16 @@ import { useConnection } from "../../context/ConnectionContext";
 import { useParams } from "react-router-dom";
 import DrawingInfo from "./DrawingInfo";
 
-const DrawingBoard = ({ gameRoom, setGameRoom, isDrawing }) => {
+const DrawingBoard = ({ gameRoom, isDrawing, gameActive }) => {
   const [color, setColor] = useState("#ffffff");
-  const [gameActive, setGameActive] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const canvasRef = useRef(null);
 
   const { connection } = useConnection();
-  const params = useParams();
 
   useEffect(() => {
     if (connection) {
-      setGameActive(true);
-      setGameRoom(params.room);
       connection.on("Drawing", (start, end, color) => {
         drawStroke(start, end, color);
       });
