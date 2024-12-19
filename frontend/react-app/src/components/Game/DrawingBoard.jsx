@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useConnection } from "../../context/ConnectionContext";
 import { useParams } from "react-router-dom";
+import DrawingInfo from "./DrawingInfo";
 
 const DrawingBoard = ({ gameRoom, setGameRoom, isDrawing }) => {
   const [color, setColor] = useState("#ffffff");
@@ -17,6 +18,9 @@ const DrawingBoard = ({ gameRoom, setGameRoom, isDrawing }) => {
       setGameRoom(params.room);
       connection.on("Drawing", (start, end, color) => {
         drawStroke(start, end, color);
+      });
+      connection.on("clearCanvas", () => {
+        clearCanvas();
       });
     }
   }, [connection]);
@@ -102,10 +106,23 @@ const DrawingBoard = ({ gameRoom, setGameRoom, isDrawing }) => {
     ctx.lineTo(end.x, end.y);
     ctx.stroke();
   }
+
+  const sendClearCanvas = async () => {
+    if (connection) {
+      connection.invoke("SendClearCanvas", gameRoom);
+    }
+  };
+
+  function clearCanvas() {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
   return (
     <>
       <div>
         {gameActive && <canvas ref={canvasRef} className="canvas"></canvas>}
+        {isDrawing && <DrawingInfo clearCanvas={sendClearCanvas} />}
       </div>
     </>
   );

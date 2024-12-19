@@ -42,7 +42,7 @@ const Game = () => {
               isDrawing={isDrawing}
             />
           </div>
-          {!isDrawing ? <GuessForm /> : <DrawingInfo />}
+          {!isDrawing && <GuessForm />}
         </div>
         <GuessContainer
           gameRoom={gameRoom}

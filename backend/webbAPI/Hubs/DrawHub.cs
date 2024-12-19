@@ -109,6 +109,11 @@ namespace webbAPI.Hubs
 
         }
 
+        public async Task SendClearCanvas (string gameRoom) 
+        {
+            await Clients.Group(gameRoom).SendAsync("clearCanvas");
+        }
+
         public override Task OnDisconnectedAsync(Exception? exception)
         {
              if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? userConn))

@@ -1,6 +1,6 @@
 import React from "react";
 
-const DrawingInfo = () => {
+const DrawingInfo = ({ clearCanvas }) => {
   const word = "Fladdermus";
   return (
     <div className="draw-info-container">
@@ -8,7 +8,9 @@ const DrawingInfo = () => {
         <p>Du och XXX ritar</p>
         <p>Rita en: {word.toUpperCase()}</p>
       </div>
-      <button className="btn">Rensa</button>
+      <button className="btn" onClick={clearCanvas}>
+        Rensa
+      </button>
     </div>
   );
 };
