@@ -7,6 +7,8 @@ import GuessContainer from "./GuessContainer";
 import Users from "./Users";
 import Header from "../Header";
 import GuessForm from "./GuessForm";
+import DrawingInfo from "./DrawingInfo";
+import TopSection from "./TopSection";
 
 const Game = () => {
   const { connection } = useConnection();
@@ -20,11 +22,19 @@ const Game = () => {
     navigate("/home");
   };
 
+  const startRound = async () => {
+    if (connection) {
+      await connection.invoke("StartRound", gameRoom);
+    }
+  };
+
   return (
     <>
       <Header gameRoom={gameRoom} onclick={leaveRoom} />
+      <button onClick={startRound}>Välj ritare</button>
       <div className="game-container">
         <div>
+          <TopSection />
           <div id="canvas-container">
             <DrawingBoard
               gameRoom={gameRoom}
@@ -32,16 +42,13 @@ const Game = () => {
               isDrawing={isDrawing}
             />
           </div>
-          {!isDrawing && <GuessForm />}
+          {!isDrawing ? <GuessForm /> : <DrawingInfo />}
         </div>
         <GuessContainer
           gameRoom={gameRoom}
           userIsDrawing={(bool) => setIsDrawing(bool)}
         />
       </div>
-      <button onClick={() => connection.invoke("StartRound", gameRoom)}>
-        Välj ritare
-      </button>
     </>
   );
 };

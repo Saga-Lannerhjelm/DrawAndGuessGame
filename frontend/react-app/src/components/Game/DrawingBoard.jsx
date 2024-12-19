@@ -105,10 +105,6 @@ const DrawingBoard = ({ gameRoom, setGameRoom, isDrawing }) => {
   return (
     <>
       <div>
-        {/* <button>Starta som ritare</button>
-        <button>Starta som gissare</button> */}
-        {isDrawing && <p>Jag ritar</p>}
-
         {gameActive && <canvas ref={canvasRef} className="canvas"></canvas>}
       </div>
     </>
