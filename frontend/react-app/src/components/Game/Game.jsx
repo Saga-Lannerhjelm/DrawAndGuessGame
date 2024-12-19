@@ -15,6 +15,8 @@ const Game = () => {
   const [gameRoom, setGameRoom] = useState("");
   const [isDrawing, setIsDrawing] = useState(false);
   const [gameActive, setGameActive] = useState(false);
+  const [round, setRound] = useState(0);
+  const [time, setTime] = useState(30);
 
   const navigate = useNavigate();
   const params = useParams();
@@ -27,9 +29,22 @@ const Game = () => {
       setGameRoom(params.room);
       connection.on("GameCanStart", (canStart) => {
         setGameActive(canStart);
+        setRound(round + 1);
       });
     }
   }, [connection]);
+
+  useEffect(() => {
+    let interval;
+    if (gameActive && time > 0) {
+      interval = setInterval(() => {
+        setTime((prevTime) => prevTime - 1);
+      }, 1000);
+    } else if (time === 0) {
+      setGameActive(false);
+    }
+    return () => clearInterval(interval);
+  }, [time, gameActive]);
 
   const leaveRoom = async () => {
     console.log("leave");
@@ -50,7 +65,7 @@ const Game = () => {
         <div>
           {gameActive ? (
             <>
-              <TopSection />
+              <TopSection time={time} round={round} />
               <div id="canvas-container">
                 <DrawingBoard
                   gameRoom={gameRoom}
