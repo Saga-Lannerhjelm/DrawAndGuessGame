@@ -36,16 +36,18 @@ namespace webbAPI.Hubs
 
             int usersInGame = users.Count();
 
-            if (usersInGame >= 3)
+            try
+            {
+                if (usersInGame >= 3)
             {
                 var rnd = new Random();
 
-                int randomNr1 = rnd.Next(1, usersInGame + 1);
-                int randomNr2 = rnd.Next(1, usersInGame + 1);
+                int randomNr1 = rnd.Next(usersInGame);
+                int randomNr2 = rnd.Next(usersInGame);
 
                 while (randomNr2 == randomNr1)
                 {
-                    randomNr2 = rnd.Next(1, usersInGame + 1);
+                    randomNr2 = rnd.Next(usersInGame);
                 }
 
                 var selectedUser1 = users[randomNr1].Value;
@@ -68,6 +70,12 @@ namespace webbAPI.Hubs
             {
                 await Clients.Group(gameRoom).SendAsync("GameCanStart", false);
             }
+            }
+            catch (Exception ex)
+            {
+                
+                Console.WriteLine($"An error occurred: {ex.Message}");
+            }
 
             // if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? user))
             // {
@@ -87,8 +95,18 @@ namespace webbAPI.Hubs
             var activeUSer = users.Find((user) => user.Key == Context.ConnectionId).Value.Username;
             var userValues = users.Select((users) => users.Value);
 
-            await Clients.OthersInGroup(gameRoom).SendAsync("UsersInGame", userValues, "");
-            await Clients.Caller.SendAsync("UsersInGame", userValues, activeUSer);
+            try
+            {
+                await Clients.OthersInGroup(gameRoom).SendAsync("UsersInGame", userValues, "");
+                await Clients.Caller.SendAsync("UsersInGame", userValues, activeUSer);
+                
+            }
+            catch (Exception ex)
+            {
+                
+                Console.WriteLine($"An error occurred while sending users in game: {ex.Message}");
+            }
+
         }
 
         public override Task OnDisconnectedAsync(Exception? exception)

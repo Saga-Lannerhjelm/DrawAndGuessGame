@@ -3,21 +3,29 @@ import GuessForm from "./GuessForm";
 import { useConnection } from "../../context/ConnectionContext";
 import { useParams } from "react-router-dom";
 
-const GuessContainer = ({ gameRoom }) => {
+const GuessContainer = ({ gameRoom, userIsDrawing }) => {
   const { connection } = useConnection();
   const [users, setUsers] = useState([]);
   const [activeUser, setActiveUser] = useState("");
 
   useEffect(() => {
     if (connection) {
-      connection.on("UsersInGame", (users, activeUser) => {
-        setUsers(users);
-        if (activeUser !== "") {
-          setActiveUser(activeUser);
+      connection.on("UsersInGame", (userValues, activeUserValues) => {
+        setUsers(userValues);
+        if (activeUserValues !== "") {
+          setActiveUser(activeUserValues);
         }
       });
     }
   }, [connection]);
+
+  useEffect(() => {
+    if (users.length > 0) {
+      userIsDrawing(
+        users.find((user) => user.username == activeUser).isDrawing
+      );
+    }
+  }, [users]);
 
   return (
     <div className="user-container">

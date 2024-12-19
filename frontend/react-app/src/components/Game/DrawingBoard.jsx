@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useConnection } from "../../context/ConnectionContext";
 import { useParams } from "react-router-dom";
 
-const DrawingBoard = ({ gameRoom, setGameRoom }) => {
+const DrawingBoard = ({ gameRoom, setGameRoom, isDrawing }) => {
   const [color, setColor] = useState("#ffffff");
   const [gameActive, setGameActive] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -104,6 +104,8 @@ const DrawingBoard = ({ gameRoom, setGameRoom }) => {
       <div>
         {/* <button>Starta som ritare</button>
         <button>Starta som gissare</button> */}
+        {isDrawing && <p>Jag ritar</p>}
+
         {gameActive && <canvas ref={canvasRef} className="canvas"></canvas>}
       </div>
     </>

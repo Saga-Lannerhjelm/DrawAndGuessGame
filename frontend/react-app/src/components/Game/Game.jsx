@@ -11,6 +11,7 @@ import GuessForm from "./GuessForm";
 const Game = () => {
   const { connection } = useConnection();
   const [gameRoom, setGameRoom] = useState("");
+  const [isDrawing, setIsDrawing] = useState(false);
   const navigate = useNavigate();
 
   const leaveRoom = async () => {
@@ -25,11 +26,18 @@ const Game = () => {
       <div className="game-container">
         <div>
           <div id="canvas-container">
-            <DrawingBoard gameRoom={gameRoom} setGameRoom={setGameRoom} />
+            <DrawingBoard
+              gameRoom={gameRoom}
+              setGameRoom={setGameRoom}
+              isDrawing={isDrawing}
+            />
           </div>
-          <GuessForm />
+          {!isDrawing && <GuessForm />}
         </div>
-        <GuessContainer gameRoom={gameRoom} />
+        <GuessContainer
+          gameRoom={gameRoom}
+          userIsDrawing={(bool) => setIsDrawing(bool)}
+        />
       </div>
       <button onClick={() => connection.invoke("StartRound", gameRoom)}>
         Välj ritare
