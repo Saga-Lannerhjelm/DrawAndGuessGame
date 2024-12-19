@@ -17,6 +17,7 @@ const Game = () => {
   const [gameActive, setGameActive] = useState(false);
   const [round, setRound] = useState(0);
   const [time, setTime] = useState(30);
+  const [userGuess, setUserGuess] = useState({ user: "", guess: "" });
 
   const navigate = useNavigate();
   const params = useParams();
@@ -27,24 +28,29 @@ const Game = () => {
     }
     if (connection) {
       setGameRoom(params.room);
+
       connection.on("GameCanStart", (canStart) => {
         setGameActive(canStart);
         setRound(round + 1);
       });
+
+      connection.on("ReceiveGuess", (guess, user) => {
+        setUserGuess({ user, guess });
+      });
     }
   }, [connection]);
 
-  useEffect(() => {
-    let interval;
-    if (gameActive && time > 0) {
-      interval = setInterval(() => {
-        setTime((prevTime) => prevTime - 1);
-      }, 1000);
-    } else if (time === 0) {
-      setGameActive(false);
-    }
-    return () => clearInterval(interval);
-  }, [time, gameActive]);
+  // useEffect(() => {
+  //   let interval;
+  //   if (gameActive && time > 0) {
+  //     interval = setInterval(() => {
+  //       setTime((prevTime) => prevTime - 1);
+  //     }, 1000);
+  //   } else if (time === 0) {
+  //     setGameActive(false);
+  //   }
+  //   return () => clearInterval(interval);
+  // }, [time, gameActive]);
 
   const leaveRoom = async () => {
     console.log("leave");
@@ -55,6 +61,12 @@ const Game = () => {
   const startRound = async () => {
     if (connection) {
       await connection.invoke("StartRound", gameRoom);
+    }
+  };
+
+  const sendGuess = async (guess) => {
+    if (connection) {
+      await connection.invoke("SendGuess", guess);
     }
   };
 
@@ -73,7 +85,7 @@ const Game = () => {
                   isDrawing={isDrawing}
                 />
               </div>
-              {!isDrawing && <GuessForm />}
+              {!isDrawing && <GuessForm sendGuess={sendGuess} />}
             </>
           ) : (
             <button onClick={startRound} className="btn">
@@ -82,8 +94,9 @@ const Game = () => {
           )}
         </div>
         <GuessContainer
-          gameRoom={gameRoom}
+          // gameRoom={gameRoom}
           userIsDrawing={(bool) => setIsDrawing(bool)}
+          userGuess={userGuess}
         />
       </div>
     </>

@@ -1,10 +1,17 @@
 import React, { useState } from "react";
 
-const GuessForm = () => {
+const GuessForm = ({ sendGuess }) => {
   const [guess, setGuess] = useState("");
   return (
     <div>
-      <form className="guess-form">
+      <form
+        className="guess-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          sendGuess(guess);
+          setGuess("");
+        }}
+      >
         <input
           type="text"
           placeholder="Gissa"

@@ -2,8 +2,9 @@ import React, { useEffect, useState } from "react";
 import GuessForm from "./GuessForm";
 import { useConnection } from "../../context/ConnectionContext";
 import { useParams } from "react-router-dom";
+import Message from "./Message";
 
-const GuessContainer = ({ gameRoom, userIsDrawing }) => {
+const GuessContainer = ({ userIsDrawing, userGuess }) => {
   const { connection } = useConnection();
   const [users, setUsers] = useState([]);
   const [activeUser, setActiveUser] = useState("");
@@ -36,6 +37,9 @@ const GuessContainer = ({ gameRoom, userIsDrawing }) => {
           style={user.hasGuessedCorrectly ? { borderColor: "#00FF2F" } : {}}
           key={index}
         >
+          {userGuess.user === user.username && (
+            <Message message={userGuess.guess} />
+          )}
           <div>
             <p>
               {user.username} {user.username == activeUser ? "(Du)" : ""}

@@ -76,15 +76,20 @@ namespace webbAPI.Hubs
                 
                 Console.WriteLine($"An error occurred: {ex.Message}");
             }
-
-            // if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? user))
-            // {
-
-            // }
         }
         public async Task Drawing(Point start, Point end, string color, string gameRoom) 
         {
             await Clients.OthersInGroup(gameRoom).SendAsync("Drawing", start, end, color);
+        }
+
+        public async Task SendGuess(string guess)
+        {
+            if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? userConn))
+            {
+            await Clients.Group(userConn.GameRoom).SendAsync("ReceiveGuess", guess, userConn.Username);
+
+            }
+
         }
 
         public async Task UsersInGame(string gameRoom) 
