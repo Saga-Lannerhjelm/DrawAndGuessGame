@@ -18,7 +18,7 @@ namespace webbAPI.Hubs
         }
         public async Task JoinGame (UserConnection userConn) 
         {
-            if (_sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == userConn.GameRoom || exGame.HasStarted == true) != null)
+            if (_sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == userConn.GameRoom && exGame.HasStarted == false) != null)
             {
                 await Groups.AddToGroupAsync(Context.ConnectionId, userConn.GameRoom);
                 _sharedDB.Connection[Context.ConnectionId] = userConn;
@@ -44,6 +44,13 @@ namespace webbAPI.Hubs
             {
                 if (usersInGame >= 3)
             {
+
+                // Mark game as started
+                var currentGame = _sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == gameRoom);
+                if (currentGame != null) currentGame.HasStarted = true;
+
+
+                // Select players to draw
                 var rnd = new Random();
 
                 int randomNr1 = rnd.Next(usersInGame);
@@ -90,6 +97,10 @@ namespace webbAPI.Hubs
         {
             if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? userConn))
             {
+                if (guess == "correct test")
+                {
+                    userConn.HasGuessedCorrectly = true;
+                }
             await Clients.Group(userConn.GameRoom).SendAsync("ReceiveGuess", guess, userConn.Username);
 
             }
