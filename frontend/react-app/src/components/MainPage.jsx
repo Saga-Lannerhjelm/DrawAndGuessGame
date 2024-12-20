@@ -33,31 +33,34 @@ const Home = () => {
 
   async function startConnection(userName, gameRoomCode) {
     if (!connection) {
-      const connection = new HubConnectionBuilder()
+      const newConnection = new HubConnectionBuilder()
         .withUrl("http://localhost:5034/draw")
         .configureLogging(LogLevel.Information)
         .withAutomaticReconnect()
         .build();
 
-      connection.on("GameStatus", (msg, isSuccess) => {
+      newConnection.on("GameStatus", (msg, isSuccess) => {
         console.log(msg);
         console.log("gameStatus", isSuccess);
         setGameStatusSuccess(isSuccess);
+
+        if (isSuccess) {
+          console.log("in success");
+          setConnection(newConnection);
+          navigate(`/game/${gameRoomCode}`);
+        }
       });
 
-      connection.onclose(() => {
+      newConnection.onclose(() => {
         setConnection();
         setGameStatusSuccess(false);
         setRoomName("");
       });
 
       try {
-        await connection.start();
+        await newConnection.start();
         const gameRoom = gameRoomCode.toString();
-        connection.invoke("JoinGame", { userName, gameRoom });
-        // Should only set the connection and navigate to the game page if a User was able to join the room
-        setConnection(connection);
-        navigate(`/game/${gameRoomCode}`);
+        newConnection.invoke("JoinGame", { userName, gameRoom });
       } catch (error) {
         console.error();
       }
