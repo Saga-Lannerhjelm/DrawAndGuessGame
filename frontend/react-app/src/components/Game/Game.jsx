@@ -17,10 +17,11 @@ const Game = () => {
   const [gameActive, setGameActive] = useState(false);
   const [round, setRound] = useState(0);
   const [time, setTime] = useState(30);
-  const [userGuess, setUserGuess] = useState({ user: "", guess: "" });
+  const [userGuesses, setUserGuesses] = useState([]);
 
   const navigate = useNavigate();
   const params = useParams();
+  const timeOutRef = useRef(null);
 
   useEffect(() => {
     if (connection === undefined) {
@@ -35,10 +36,41 @@ const Game = () => {
       });
 
       connection.on("ReceiveGuess", (guess, user) => {
-        setUserGuess({ user, guess });
+        setUserGuesses((prevGuesses) => {
+          const existingGuessIndex = prevGuesses.findIndex(
+            (g) => g.user === user
+          );
+          if (existingGuessIndex !== -1) {
+            const updatedGuesses = [...prevGuesses];
+            updatedGuesses[existingGuessIndex] = { user, guess };
+            return updatedGuesses;
+          } else {
+            return [...prevGuesses, { user, guess }];
+          }
+        });
+        displayMessage(user);
       });
     }
   }, [connection]);
+
+  const displayMessage = (user) => {
+    console.log("in display");
+    if (timeOutRef.current) {
+      clearTimeout(timeOutRef.current);
+    }
+    // bara det senaste skrivna meddelandet försvinner
+    timeOutRef.current = setTimeout(() => {
+      setUserGuesses((prevGuesses) => {
+        const existingGuessIndex = prevGuesses.findIndex(
+          (g) => g.user === user
+        );
+        const guesses = [...prevGuesses];
+        guesses.splice(existingGuessIndex, 1);
+        return guesses;
+      });
+      timeOutRef.current = null;
+    }, 4000);
+  };
 
   // useEffect(() => {
   //   let interval;
@@ -96,7 +128,7 @@ const Game = () => {
         <GuessContainer
           // gameRoom={gameRoom}
           userIsDrawing={(bool) => setIsDrawing(bool)}
-          userGuess={userGuess}
+          userGuesses={userGuesses}
         />
       </div>
     </>

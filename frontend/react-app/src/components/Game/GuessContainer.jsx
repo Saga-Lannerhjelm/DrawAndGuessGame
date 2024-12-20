@@ -4,7 +4,7 @@ import { useConnection } from "../../context/ConnectionContext";
 import { useParams } from "react-router-dom";
 import Message from "./Message";
 
-const GuessContainer = ({ userIsDrawing, userGuess }) => {
+const GuessContainer = ({ userIsDrawing, userGuesses }) => {
   const { connection } = useConnection();
   const [users, setUsers] = useState([]);
   const [activeUser, setActiveUser] = useState("");
@@ -34,8 +34,12 @@ const GuessContainer = ({ userIsDrawing, userGuess }) => {
       {users.map((user, index) => (
         <>
           <div className="message-and-user">
-            {userGuess.user === user.username ? (
-              <Message message={userGuess.guess} />
+            {userGuesses.find((g) => g.user === user.username) ? (
+              <Message
+                message={
+                  userGuesses.find((g) => g.user === user.username).guess
+                }
+              />
             ) : (
               <div></div>
             )}
