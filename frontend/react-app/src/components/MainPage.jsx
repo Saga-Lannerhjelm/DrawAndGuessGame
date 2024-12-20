@@ -55,6 +55,7 @@ const Home = () => {
         await connection.start();
         const gameRoom = gameRoomCode.toString();
         connection.invoke("JoinGame", { userName, gameRoom });
+        // Should only set the connection and navigate to the game page if a User was able to join the room
         setConnection(connection);
         navigate(`/game/${gameRoomCode}`);
       } catch (error) {
