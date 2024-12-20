@@ -100,9 +100,9 @@ namespace webbAPI.Hubs
                 if (guess == "correct test")
                 {
                     userConn.HasGuessedCorrectly = true;
+                    await UsersInGame(userConn.GameRoom);
                 }
-            await Clients.Group(userConn.GameRoom).SendAsync("ReceiveGuess", guess, userConn.Username);
-
+                await Clients.Group(userConn.GameRoom).SendAsync("ReceiveGuess", guess, userConn.Username);
             }
 
         }
