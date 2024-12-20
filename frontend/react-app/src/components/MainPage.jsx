@@ -5,9 +5,10 @@ import { useConnection } from "../context/ConnectionContext";
 
 const Home = () => {
   const [userName, setUserName] = useState("");
+  const [roomName, setRoomName] = useState("");
   const [randomUsername, setRandomUsername] = useState("");
   const [inviteCode, setInviteCode] = useState("");
-  // const [connection, setConnection] = useState(undefined);
+  const [gameStatusSuccess, setGameStatusSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const { setConnection, connection } = useConnection();
@@ -19,9 +20,9 @@ const Home = () => {
   }, []);
 
   // Also check so that it is unique compared to the existing games in the database
-  const createRoom = async (userName) => {
+  const createRoom = async (roomName) => {
     const gameRoomCode = Math.round(Math.random() * 100000000);
-    startConnection(userName, gameRoomCode);
+    startConnection(randomUsername, gameRoomCode);
   };
 
   const joinRoom = async (gameRoomCode) => {
@@ -38,18 +39,22 @@ const Home = () => {
         .withAutomaticReconnect()
         .build();
 
-      connection.on("GameStatus", (msg) => {
+      connection.on("GameStatus", (msg, isSuccess) => {
         console.log(msg);
+        console.log("gameStatus", isSuccess);
+        setGameStatusSuccess(isSuccess);
       });
 
       connection.onclose(() => {
         setConnection();
+        setGameStatusSuccess(false);
+        setRoomName("");
       });
 
       try {
         await connection.start();
         const gameRoom = gameRoomCode.toString();
-        connection.invoke("JoinGame", { userName, gameRoom, role: "hello" });
+        connection.invoke("JoinGame", { userName, gameRoom });
         setConnection(connection);
         navigate(`/game/${gameRoomCode}`);
       } catch (error) {
@@ -92,6 +97,11 @@ const Home = () => {
             type="text"
             placeholder="Användarnamn"
             onChange={(e) => setUserName(e.target.value)}
+          />
+          <input
+            type="text"
+            placeholder="Namn på spelrummet"
+            onChange={(e) => setRoomName(e.target.value)}
           />
           <button className="btn" type="submit">
             Skapa rum

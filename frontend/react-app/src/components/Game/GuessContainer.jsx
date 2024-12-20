@@ -33,7 +33,7 @@ const GuessContainer = ({ userIsDrawing, userGuesses }) => {
       Spelare ({users.length})
       {users.map((user, index) => (
         <>
-          <div className="message-and-user">
+          <div className="message-and-user" key={index}>
             {userGuesses.find((g) => g.user === user.username) ? (
               <Message
                 message={
@@ -46,7 +46,6 @@ const GuessContainer = ({ userIsDrawing, userGuesses }) => {
             <div
               className={user.isDrawing ? "user drawing" : "user"}
               style={user.hasGuessedCorrectly ? { borderColor: "#00FF2F" } : {}}
-              key={index}
             >
               <div>
                 <p>

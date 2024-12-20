@@ -18,15 +18,19 @@ namespace webbAPI.Hubs
         }
         public async Task JoinGame (UserConnection userConn) 
         {
+            if (_sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == userConn.GameRoom || exGame.HasStarted == true) != null)
+            {
+                await Groups.AddToGroupAsync(Context.ConnectionId, userConn.GameRoom);
+                _sharedDB.Connection[Context.ConnectionId] = userConn;
 
-            await Groups.AddToGroupAsync(Context.ConnectionId, userConn.GameRoom);
-            _sharedDB.Connection[Context.ConnectionId] = userConn;
 
+                await Clients.OthersInGroup(userConn.GameRoom).SendAsync("GameStatus", $"{userConn.Username} anslöt till spelet", true);
+                await Clients.Caller.SendAsync("GameStatus", $"Välkommen till spelet. Anslutningkoden är {userConn.GameRoom}", true);
 
-            await Clients.OthersInGroup(userConn.GameRoom).SendAsync("GameStatus", $"{userConn.Username} anslöt till spelet");
-            await Clients.Caller.SendAsync("GameStatus", $"Välkommen till spelet. Anslutningkoden är {userConn.GameRoom}");
-
-            await UsersInGame(userConn.GameRoom);
+                await UsersInGame(userConn.GameRoom);
+            } else {
+                await Clients.Caller.SendAsync("GameStatus", $"Spelet finns inte eller har redan startat", false);
+            }
         }
 
         public async Task StartRound(string gameRoom)
