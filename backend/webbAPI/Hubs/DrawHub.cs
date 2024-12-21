@@ -31,6 +31,7 @@ namespace webbAPI.Hubs
                 await Clients.Caller.SendAsync("GameStatus", $"Välkommen till spelet. Anslutningkoden är {userConn.GameRoom}", true);
 
                 await UsersInGame(userConn.GameRoom);
+                await GameInfo(userConn.GameRoom);
             } else {
                 await Clients.Caller.SendAsync("GameStatus", $"Spelet finns inte eller har redan startat", false);
             }
@@ -59,10 +60,11 @@ namespace webbAPI.Hubs
                     currentGame.Rounds.Add(new GameRound {
                         Round =+ 1,
                     });
+
+                    // Get word
+                    await GetWord(currentGame);
                 }
 
-                // Get word
-                await GetWord(currentGame);
                 
                 // Select players to draw
                 var rnd = new Random();
@@ -90,6 +92,7 @@ namespace webbAPI.Hubs
                 await Clients.Group(gameRoom).SendAsync("GameCanStart", true);
                 await Clients.Group(gameRoom).SendAsync("GameStatus", $"{drawingUserOne} och {drawingUserTwo} ritar!");
                 await UsersInGame(gameRoom);
+                await GameInfo(gameRoom);
             }
             else 
             {
@@ -162,7 +165,14 @@ namespace webbAPI.Hubs
                 
                 Console.WriteLine($"An error occurred while sending users in game: {ex.Message}");
             }
+        }
 
+        public Task GameInfo(string gameRoom) 
+        {
+            var currentGame = _sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == gameRoom);
+            var currentRound = currentGame?.Rounds.Count > 0 ? currentGame?.Rounds[currentGame.Rounds.Count - 1] : new GameRound(); 
+
+            return Clients.Group(gameRoom).SendAsync("receiveGameInfo", currentGame, currentRound);
         }
 
         public async Task SendClearCanvas (string gameRoom) 

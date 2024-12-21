@@ -1,7 +1,6 @@
 import React from "react";
 
-const DrawingInfo = ({ clearCanvas }) => {
-  const word = "Fladdermus";
+const DrawingInfo = ({ clearCanvas, word }) => {
   return (
     <div className="draw-info-container">
       <div>

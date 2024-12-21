@@ -3,7 +3,7 @@ import { useConnection } from "../../context/ConnectionContext";
 import { useParams } from "react-router-dom";
 import DrawingInfo from "./DrawingInfo";
 
-const DrawingBoard = ({ gameRoom, isDrawing, gameActive }) => {
+const DrawingBoard = ({ gameRoom, isDrawing, gameActive, word }) => {
   const [color, setColor] = useState("#ffffff");
 
   const [loading, setLoading] = useState(true);
@@ -119,7 +119,7 @@ const DrawingBoard = ({ gameRoom, isDrawing, gameActive }) => {
     <>
       <div>
         {gameActive && <canvas ref={canvasRef} className="canvas"></canvas>}
-        {isDrawing && <DrawingInfo clearCanvas={sendClearCanvas} />}
+        {isDrawing && <DrawingInfo clearCanvas={sendClearCanvas} word={word} />}
       </div>
     </>
   );

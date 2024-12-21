@@ -12,10 +12,12 @@ import TopSection from "./TopSection";
 
 const Game = () => {
   const { connection } = useConnection();
-  const [gameRoom, setGameRoom] = useState("");
+  const [roomName, setRoomName] = useState("");
+  const [joinCode, setJoinCode] = useState("");
   const [isDrawing, setIsDrawing] = useState(false);
   const [gameActive, setGameActive] = useState(false);
   const [round, setRound] = useState(0);
+  const [word, setWord] = useState("");
   const [time, setTime] = useState(30);
   const [userGuesses, setUserGuesses] = useState([]);
 
@@ -28,11 +30,11 @@ const Game = () => {
       navigate("/home");
     }
     if (connection) {
-      setGameRoom(params.room);
+      setJoinCode(params.room);
 
       connection.on("GameCanStart", (canStart) => {
-        setGameActive(canStart);
-        setRound(round + 1);
+        // setGameActive(canStart);
+        // setRound(round + 1);
       });
 
       connection.on("ReceiveGuess", (guess, user) => {
@@ -49,6 +51,13 @@ const Game = () => {
           }
         });
         displayMessage(user);
+      });
+
+      connection.on("receiveGameInfo", (game, round) => {
+        setRoomName(game.roomName);
+        setGameActive(game.hasStarted);
+        setRound(game.rounds.length);
+        setWord(round.word);
       });
     }
   }, [connection]);
@@ -92,7 +101,7 @@ const Game = () => {
 
   const startRound = async () => {
     if (connection) {
-      await connection.invoke("StartRound", gameRoom);
+      await connection.invoke("StartRound", joinCode);
     }
   };
 
@@ -104,7 +113,7 @@ const Game = () => {
 
   return (
     <>
-      <Header gameRoom={gameRoom} onclick={leaveRoom} />
+      <Header roomName={roomName} joinCode={joinCode} onclick={leaveRoom} />
       <div className="game-container">
         <div>
           {gameActive ? (
@@ -112,9 +121,10 @@ const Game = () => {
               <TopSection time={time} round={round} />
               <div id="canvas-container">
                 <DrawingBoard
-                  gameRoom={gameRoom}
+                  gameRoom={joinCode}
                   gameActive={gameActive}
                   isDrawing={isDrawing}
+                  word={word}
                 />
               </div>
               {!isDrawing && <GuessForm sendGuess={sendGuess} />}

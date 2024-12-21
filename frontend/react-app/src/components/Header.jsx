@@ -1,9 +1,10 @@
 import React from "react";
 
-const Header = ({ gameRoom, onclick }) => {
+const Header = ({ roomName, joinCode, onclick }) => {
   return (
     <div className="header">
-      JoinCode: {gameRoom}{" "}
+      <p>{roomName}</p>
+      JoinCode: {joinCode}{" "}
       <button onClick={() => onclick()}>Lämna spelet</button>
     </div>
   );
