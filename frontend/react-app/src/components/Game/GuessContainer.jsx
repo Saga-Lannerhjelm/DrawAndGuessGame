@@ -39,6 +39,7 @@ const GuessContainer = ({ userIsDrawing, userGuesses }) => {
                 message={
                   userGuesses.find((g) => g.user === user.username).guess
                 }
+                correct={user.hasGuessedCorrectly}
               />
             ) : (
               <div></div>

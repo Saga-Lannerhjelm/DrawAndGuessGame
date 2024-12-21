@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using Newtonsoft.Json;
 using webbAPI.DataService;
 using webbAPI.Models;
 
@@ -38,18 +41,29 @@ namespace webbAPI.Hubs
             var users = _sharedDB.Connection
             .Where(g => g.Value.GameRoom == gameRoom).ToList();
 
-            int usersInGame = users.Count();
+            int usersInGame = users.Count;
 
             try
             {
                 if (usersInGame >= 3)
             {
+                // Current game
+                var currentGame = _sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == gameRoom);
+
 
                 // Mark game as started
-                var currentGame = _sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == gameRoom);
-                if (currentGame != null) currentGame.HasStarted = true;
+                if (currentGame != null) 
+                {
+                    currentGame.HasStarted = true;
 
+                    currentGame.Rounds.Add(new GameRound {
+                        Round =+ 1,
+                    });
+                }
 
+                // Get word
+                await GetWord(currentGame);
+                
                 // Select players to draw
                 var rnd = new Random();
 
@@ -88,6 +102,23 @@ namespace webbAPI.Hubs
                 Console.WriteLine($"An error occurred: {ex.Message}");
             }
         }
+
+        public async Task GetWord (Game currentGame) 
+        {
+            // Link to API https://random-word-form.herokuapp.com
+            HttpClient client = new();
+            HttpResponseMessage response = await client.GetAsync("https://random-word-form.herokuapp.com/random/noun");
+            string word = "";
+
+            if (response.IsSuccessStatusCode)
+            {
+                string apiResp = await response.Content.ReadAsStringAsync();
+                string[] words = JsonConvert.DeserializeObject<string[]>(apiResp) ?? [];
+                word = (words?.Length > 0) ? words[0] : "";
+                
+            }
+            currentGame.Rounds[currentGame.Rounds.Count - 1].Word = word;
+        }
         public async Task Drawing(Point start, Point end, string color, string gameRoom) 
         {
             await Clients.OthersInGroup(gameRoom).SendAsync("Drawing", start, end, color);
@@ -97,12 +128,17 @@ namespace webbAPI.Hubs
         {
             if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? userConn))
             {
-                if (guess == "correct test")
+                 var currentGame = _sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == userConn.GameRoom);
+
+                if (guess == currentGame?.Rounds[currentGame.Rounds.Count -1].Word)
                 {
                     userConn.HasGuessedCorrectly = true;
                     await UsersInGame(userConn.GameRoom);
+                    await Clients.Caller.SendAsync("ReceiveGuess", guess, userConn.Username);
+                    await Clients.OthersInGroup(userConn.GameRoom).SendAsync("ReceiveGuess", "Gissade rätt", userConn.Username);
+                } else {
+                    await Clients.Group(userConn.GameRoom).SendAsync("ReceiveGuess", guess, userConn.Username);
                 }
-                await Clients.Group(userConn.GameRoom).SendAsync("ReceiveGuess", guess, userConn.Username);
             }
 
         }

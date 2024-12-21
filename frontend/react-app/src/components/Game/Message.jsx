@@ -1,10 +1,10 @@
 import React from "react";
 
-const Message = ({ message }) => {
+const Message = ({ message, correct }) => {
   return (
     <>
       <div className="guess-box">
-        <div>{message}</div>
+        <div style={correct ? { color: "green" } : {}}>{message}</div>
         <svg
           width="56"
           height="37"
