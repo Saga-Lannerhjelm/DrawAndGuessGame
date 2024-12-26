@@ -32,32 +32,28 @@ const GuessContainer = ({ userIsDrawing, userGuesses }) => {
     <div className="user-container">
       Spelare ({users.length})
       {users.map((user, index) => (
-        <>
-          <div className="message-and-user" key={index}>
-            {userGuesses.find((g) => g.user === user.username) ? (
-              <Message
-                message={
-                  userGuesses.find((g) => g.user === user.username).guess
-                }
-                correct={user.hasGuessedCorrectly}
-              />
-            ) : (
-              <div></div>
-            )}
-            <div
-              className={user.isDrawing ? "user drawing" : "user"}
-              style={user.hasGuessedCorrectly ? { borderColor: "#00FF2F" } : {}}
-            >
-              <div>
-                <p>
-                  {user.username} {user.username == activeUser ? "(Du)" : ""}
-                </p>
-                <p>{user.points} poäng</p>
-              </div>
-              {user.isDrawing && <span>ritar</span>}
+        <div className="message-and-user" key={index}>
+          {userGuesses.find((g) => g.user === user.username) ? (
+            <Message
+              message={userGuesses.find((g) => g.user === user.username).guess}
+              correct={user.hasGuessedCorrectly}
+            />
+          ) : (
+            <div></div>
+          )}
+          <div
+            className={user.isDrawing ? "user drawing" : "user"}
+            style={user.hasGuessedCorrectly ? { borderColor: "#00FF2F" } : {}}
+          >
+            <div>
+              <p>
+                {user.username} {user.username == activeUser ? "(Du)" : ""}
+              </p>
+              <p>{user.points} poäng</p>
             </div>
+            {user.isDrawing && <span>ritar</span>}
           </div>
-        </>
+        </div>
       ))}
     </div>
   );
