@@ -111,7 +111,7 @@ const Game = () => {
 
   const sendGuess = async (guess) => {
     if (connection) {
-      await connection.invoke("SendGuess", guess);
+      await connection.invoke("SendGuess", guess.toLowerCase());
     }
   };
 
