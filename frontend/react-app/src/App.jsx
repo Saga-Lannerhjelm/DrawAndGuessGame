@@ -9,8 +9,6 @@ import Game from "./components/Game/Game";
 import { ConnectionProvider } from "./context/ConnectionContext";
 
 function App() {
-  const [count, setCount] = useState(0);
-
   return (
     <ConnectionProvider>
       <Routes>
