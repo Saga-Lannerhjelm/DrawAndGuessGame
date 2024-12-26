@@ -11,7 +11,7 @@ const Home = () => {
   const [gameStatusSuccess, setGameStatusSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const { setConnection, connection } = useConnection();
+  const { setConnection, connection, setActiveUser } = useConnection();
 
   const navigate = useNavigate();
 
@@ -52,6 +52,7 @@ const Home = () => {
   const joinRoom = async (gameRoomCode) => {
     if (!loading) {
       startConnection(randomUsername, gameRoomCode);
+      setActiveUser(randomUsername);
     }
   };
 

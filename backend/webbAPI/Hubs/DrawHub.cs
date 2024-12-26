@@ -147,25 +147,31 @@ namespace webbAPI.Hubs
 
         }
 
-        public async Task UsersInGame(string gameRoom) 
+        public Task UsersInGame(string gameRoom) 
         {
-            var users = _sharedDB.Connection
-            .Where(g => g.Value.GameRoom == gameRoom).ToList();
-
-            var activeUSer = users.Find((user) => user.Key == Context.ConnectionId).Value.Username;
-            var userValues = users.Select((users) => users.Value);
+            // string activeUser = "";
 
             try
             {
-                await Clients.OthersInGroup(gameRoom).SendAsync("UsersInGame", userValues, "");
-                await Clients.Caller.SendAsync("UsersInGame", userValues, activeUSer);
+                // if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? user))
+                // {   
+                //     activeUser = user.Username;
+                // }
+
+                var users = _sharedDB.Connection
+                .Where(g => g.Value.GameRoom == gameRoom).ToList();
+                var userValues = users.Select((users) => users.Value);
+
+                return Clients.Group(gameRoom).SendAsync("UsersInGame", userValues);
+                // await Clients.Caller.SendAsync("UsersInGame", userValues, activeUSer);
                 
             }
             catch (Exception ex)
             {
-                
-                Console.WriteLine($"An error occurred while sending users in game: {ex.Message}");
+                return null;
             }
+
+
         }
 
         public Task GameInfo(string gameRoom) 
