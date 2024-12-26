@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -178,6 +179,18 @@ namespace webbAPI.Hubs
         public async Task SendClearCanvas (string gameRoom) 
         {
             await Clients.Group(gameRoom).SendAsync("clearCanvas");
+        }
+        
+        public async Task EndGame () 
+        {
+             if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? userConn))
+            {
+                var bag = _sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == userConn.GameRoom);
+                if (_sharedDB.CreatedGames.TryTake(out bag))
+                {
+                    await Clients.Group(userConn.GameRoom).SendAsync("leaveGame");
+                } 
+            }
         }
 
         public override Task OnDisconnectedAsync(Exception? exception)

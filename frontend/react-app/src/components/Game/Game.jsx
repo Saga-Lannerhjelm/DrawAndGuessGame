@@ -59,6 +59,10 @@ const Game = () => {
         setRound(game.rounds.length);
         setWord(round.word);
       });
+
+      connection.on("leaveGame", () => {
+        connection.stop();
+      });
     }
   }, [connection]);
 
@@ -111,9 +115,20 @@ const Game = () => {
     }
   };
 
+  const endGame = async () => {
+    if (connection) {
+      await connection.invoke("EndGame");
+    }
+  };
+
   return (
     <>
-      <Header roomName={roomName} joinCode={joinCode} onclick={leaveRoom} />
+      <Header
+        roomName={roomName}
+        joinCode={joinCode}
+        onclick={leaveRoom}
+        endGame={endGame}
+      />
       <div className="game-container">
         <div>
           {gameActive ? (
