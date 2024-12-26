@@ -22,7 +22,31 @@ const Home = () => {
   // Also check so that it is unique compared to the existing games in the database
   const createRoom = async (roomName) => {
     const gameRoomCode = Math.round(Math.random() * 100000000);
-    startConnection(randomUsername, gameRoomCode);
+
+    const game = {
+      RoomName: roomName,
+      JoinCode: gameRoomCode.toString(),
+      HasStarted: false,
+      Rounds: [],
+    };
+
+    await fetch("http://localhost:5034/Game", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(game),
+    })
+      .then((res) => {
+        console.log(res);
+        if (res.status === 200) {
+          joinRoom(gameRoomCode);
+        } else {
+          console.log(res);
+        }
+      })
+      .catch((er) => console.error(er));
   };
 
   const joinRoom = async (gameRoomCode) => {
@@ -94,14 +118,14 @@ const Home = () => {
           className="standard-form"
           onSubmit={(e) => {
             e.preventDefault();
-            createRoom(userName);
+            createRoom(roomName);
           }}
         >
-          <input
+          {/* <input
             type="text"
             placeholder="Användarnamn"
             onChange={(e) => setUserName(e.target.value)}
-          />
+          /> */}
           <input
             type="text"
             placeholder="Namn på spelrummet"
