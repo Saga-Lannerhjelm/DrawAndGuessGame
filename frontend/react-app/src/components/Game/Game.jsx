@@ -9,6 +9,7 @@ import Header from "../Header";
 import GuessForm from "./GuessForm";
 import DrawingInfo from "./DrawingInfo";
 import TopSection from "./TopSection";
+import ResultCard from "./ResultCard";
 
 const Game = () => {
   const { connection } = useConnection();
@@ -17,6 +18,7 @@ const Game = () => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [gameActive, setGameActive] = useState(false);
   const [round, setRound] = useState(0);
+  const [roundComplete, setRoundComplete] = useState(false);
   const [word, setWord] = useState("");
   const [time, setTime] = useState(30);
   const [userGuesses, setUserGuesses] = useState([]);
@@ -58,6 +60,7 @@ const Game = () => {
         setGameActive(game.hasStarted);
         setRound(game.rounds.length);
         setWord(round.word);
+        setRoundComplete(round.roundComplete);
       });
 
       connection.on("leaveGame", () => {
@@ -131,7 +134,9 @@ const Game = () => {
       />
       <div className="game-container">
         <div>
-          {gameActive ? (
+          {roundComplete ? (
+            <ResultCard />
+          ) : gameActive ? (
             <>
               <TopSection time={time} round={round} />
               <div id="canvas-container">

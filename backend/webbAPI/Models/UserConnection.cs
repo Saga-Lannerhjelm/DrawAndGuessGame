@@ -12,5 +12,6 @@ namespace webbAPI.Models
         public bool IsDrawing { get; set; } = false;
         public int Points { get; set; } = 0;
         public bool HasGuessedCorrectly { get; set; } = false;
+        public bool GuessedFirst { get; set; } = false;
     }
 }

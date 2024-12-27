@@ -104,7 +104,7 @@ const Home = () => {
       return result.usernames[0];
     } catch (error) {
       console.error(error);
-      return null;
+      return "Anonymous";
     } finally {
       setLoading(false);
     }

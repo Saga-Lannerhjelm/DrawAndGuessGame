@@ -7,8 +7,9 @@ namespace webbAPI.Models
 {
     public class GameRound
     {
-        public int Round { get; set; } = 0;
-        public string Word { get; set; } = string.Empty;
+        // public int Round { get; set; } = 0;
+        public string Word { get; set; } = "a word";
+        public bool RoundComplete { get; set; } = false;
 
     }
 }

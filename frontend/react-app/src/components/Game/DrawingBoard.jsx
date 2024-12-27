@@ -42,7 +42,9 @@ const DrawingBoard = ({ gameRoom, isDrawing, gameActive, word }) => {
 
   useEffect(() => {
     if (gameActive) {
-      getColor().then((color) => setColor(color));
+      getColor()
+        .then((color) => setColor(color))
+        .catch(() => setColor("green"));
       const canvas = canvasRef.current;
 
       const handelResize = () => {
