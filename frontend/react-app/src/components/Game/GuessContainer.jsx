@@ -27,9 +27,9 @@ const GuessContainer = ({ userIsDrawing, userGuesses }) => {
   }, [connection]);
 
   useEffect(() => {
-    if (users.length > 0) {
+    if (users.length > 0 && users[0].isDrawing !== undefined) {
       userIsDrawing(
-        users.find((user) => user.username == activeUser).isDrawing
+        users.find((user) => user.userDetails.username == activeUser).isDrawing
       );
     }
   }, [users]);
@@ -39,26 +39,44 @@ const GuessContainer = ({ userIsDrawing, userGuesses }) => {
       Spelare ({users.length})
       {users.map((user, index) => (
         <div className="message-and-user" key={index}>
-          {userGuesses.find((g) => g.user === user.username) ? (
+          {userGuesses.find((g) => g.user === user.userDetails.username) ? (
             <Message
-              message={userGuesses.find((g) => g.user === user.username).guess}
+              message={
+                userGuesses.find((g) => g.user === user.userDetails.username)
+                  .guess
+              }
               correct={user.hasGuessedCorrectly}
             />
           ) : (
             <div></div>
           )}
-          <div
-            className={user.isDrawing ? "user drawing" : "user"}
-            style={user.hasGuessedCorrectly ? { borderColor: "#00FF2F" } : {}}
-          >
-            <div>
-              <p>
-                {user.username} {user.username == activeUser ? "(Du)" : ""}
-              </p>
-              <p>{user.points} poäng</p>
+          {user.username == undefined ? (
+            <div
+              className={user.isDrawing ? "user drawing" : "user"}
+              style={user.hasGuessedCorrectly ? { borderColor: "#00FF2F" } : {}}
+            >
+              <div>
+                <p>
+                  {user.userDetails.username}{" "}
+                  {user.userDetails.username == activeUser ? "(Du)" : ""}
+                </p>
+                <p>{user.points} poäng</p>
+              </div>
+              {user.isDrawing && <span>ritar</span>}
             </div>
-            {user.isDrawing && <span>ritar</span>}
-          </div>
+          ) : (
+            <div
+              className={user.isDrawing ? "user drawing" : "user"}
+              style={user.hasGuessedCorrectly ? { borderColor: "#00FF2F" } : {}}
+            >
+              <div>
+                <p>
+                  {user.username} {user.username == activeUser ? "(Du)" : ""}
+                </p>
+                <p></p>
+              </div>
+            </div>
+          )}
         </div>
       ))}
     </div>

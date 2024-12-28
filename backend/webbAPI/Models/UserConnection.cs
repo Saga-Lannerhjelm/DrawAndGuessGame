@@ -7,11 +7,10 @@ namespace webbAPI.Models
 {
     public class UserConnection
     {
+        public int Id { get; set; }
         public string Username { get; set; } = string.Empty;
         public string GameRoom { get; set; } = string.Empty;
-        public bool IsDrawing { get; set; } = false;
-        public int Points { get; set; } = 0;
-        public bool HasGuessedCorrectly { get; set; } = false;
-        public bool GuessedFirst { get; set; } = false;
+        public int TotalPoints { get; set; } = 0;
+        public int Winns { get; set; } = 0;
     }
 }

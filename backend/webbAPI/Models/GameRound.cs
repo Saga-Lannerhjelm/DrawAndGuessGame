@@ -10,6 +10,7 @@ namespace webbAPI.Models
         // public int Round { get; set; } = 0;
         public string Word { get; set; } = "a word";
         public bool RoundComplete { get; set; } = false;
+        public List<User> Users { get; set; } = [];
 
     }
 }

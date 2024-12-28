@@ -43,25 +43,35 @@ namespace webbAPI.Hubs
             var users = _sharedDB.Connection
             .Where(g => g.Value.GameRoom == gameRoom).ToList();
 
-            int usersInGame = users.Count;
+            int usersInGameNr = users.Count;
+
+            var allUsersInGame = _sharedDB.Connection.Values
+            .Where(g => g.GameRoom == gameRoom).ToList();
 
             try
             {
-                if (usersInGame >= 3)
+                if (usersInGameNr >= 3)
                 {
                     // Current game
                     var currentGame = _sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == gameRoom);
 
-
-                    // Mark game as started
                     if (currentGame != null) 
                     {
+                        // Mark game as started
                         currentGame.HasStarted = true;
 
-                        currentGame.Rounds.Add(new GameRound());
+                        // Add new Round
+                        currentGame.Rounds.Add(new GameRound{
+                            
+                        });
+
+                        // Add users to the round
+                        foreach (var user in allUsersInGame)
+                        {
+                            currentGame.Rounds[^1].Users.Add(new User{UserDetails = user});
+                        }
 
                         // Get word
-
                         try
                         {
                             await GetWord(currentGame);  
@@ -71,40 +81,37 @@ namespace webbAPI.Hubs
                             
                             Console.WriteLine($"An error occurred: {ex.Message}");
                         }
-                    }
-
                     
-                    // Select players to draw
-                    var rnd = new Random();
+                        // Select players to draw
+                        var rnd = new Random();
 
-                    int randomNr1 = rnd.Next(usersInGame);
-                    int randomNr2 = rnd.Next(usersInGame);
+                        int randomNr1 = rnd.Next(usersInGameNr);
+                        int randomNr2 = rnd.Next(usersInGameNr);
 
-                    while (randomNr2 == randomNr1)
-                    {
-                        randomNr2 = rnd.Next(usersInGame);
+                        while (randomNr2 == randomNr1)
+                        {
+                            randomNr2 = rnd.Next(usersInGameNr);
+                        }
+
+                        var selectedUser1 = currentGame.Rounds[^1].Users[randomNr1];
+                        var selectedUser2 = currentGame.Rounds[^1].Users[randomNr2];
+
+                        selectedUser1.IsDrawing = true;
+                        selectedUser2.IsDrawing = true;
+
+                        // Make sure that only the ones that hasn't drawn yet are selected
+                        // Maybe filter out the ones that already have drawn
+
+                        await Clients.Group(gameRoom).SendAsync("GameCanStart", true);
+                        await Clients.Group(gameRoom).SendAsync("GameStatus", $"{selectedUser1.UserDetails.Username} och {selectedUser2.UserDetails.Username} ritar!");
+                        await UsersInRound(gameRoom);
+                        await GameInfo(gameRoom);
+                     
                     }
-
-                    var selectedUser1 = users[randomNr1].Value;
-                    var selectedUser2 = users[randomNr2].Value;
-
-                    selectedUser1.IsDrawing = true;
-                    selectedUser2.IsDrawing = true;
-
-                    var drawingUserOne = selectedUser1.Username;
-                    var drawingUserTwo = selectedUser2.Username;
-
-                    // Make sure that only the ones that hasn't drawn yet are selected
-                    // Maybe filter out the ones that already have drawn
-
-                    await Clients.Group(gameRoom).SendAsync("GameCanStart", true);
-                    await Clients.Group(gameRoom).SendAsync("GameStatus", $"{drawingUserOne} och {drawingUserTwo} ritar!");
-                    await UsersInGame(gameRoom);
-                    await GameInfo(gameRoom);
-                }
-                else 
-                {
-                    await Clients.Group(gameRoom).SendAsync("GameCanStart", false);
+                    else 
+                    {
+                        await Clients.Group(gameRoom).SendAsync("GameCanStart", false);
+                    }
                 }
             }
             catch (Exception ex)
@@ -127,7 +134,7 @@ namespace webbAPI.Hubs
                 string[] words = JsonConvert.DeserializeObject<string[]>(apiResp) ?? [];
                 word = (words?.Length > 0) ? words[0] : "";
             } 
-            currentGame.Rounds[currentGame.Rounds.Count - 1].Word = word;
+            currentGame.Rounds[^1].Word = word;
         }
         public async Task Drawing(Point start, Point end, string color, string gameRoom) 
         {
@@ -139,26 +146,27 @@ namespace webbAPI.Hubs
             if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? userConn))
             {
                  var currentGame = _sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == userConn.GameRoom);
-                 var currentRound = currentGame?.Rounds[currentGame.Rounds.Count -1];
+                 var currentRound = currentGame?.Rounds[^1];
+                 var activeUser = currentGame?.Rounds[^1].Users.Find(u => u.UserDetails.Username == userConn.Username) ?? new User();
 
                 if (guess == currentRound?.Word)
                 {
 
-                    var users = _sharedDB.Connection.Values.Where(g => g.GameRoom == userConn.GameRoom).ToList();
+                    var users = currentRound.Users.Where(g => g.UserDetails.GameRoom == userConn.GameRoom).ToList();
 
                     if (!users.Where(user => user.HasGuessedCorrectly).Any())
                     {
-                        userConn.GuessedFirst = true;
+                        activeUser.GuessedFirst = true;
                     }
 
-                    userConn.HasGuessedCorrectly = true;
+                    activeUser.HasGuessedCorrectly = true;
 
                     if (!users.Where(user => !user.IsDrawing && !user.HasGuessedCorrectly).Any())
                     {
                         currentRound.RoundComplete = true;
                     }
 
-                    await UsersInGame(userConn.GameRoom);
+                    await UsersInRound(userConn.GameRoom);
                     await GameInfo(userConn.GameRoom);
                     await Clients.Caller.SendAsync("ReceiveGuess", guess, userConn.Username);
                     await Clients.OthersInGroup(userConn.GameRoom).SendAsync("ReceiveGuess", "Gissade rätt", userConn.Username);
@@ -171,35 +179,34 @@ namespace webbAPI.Hubs
 
         public Task UsersInGame(string gameRoom) 
         {
-            // string activeUser = "";
-
             try
             {
-                // if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? user))
-                // {   
-                //     activeUser = user.Username;
-                // }
-
                 var users = _sharedDB.Connection
                 .Where(g => g.Value.GameRoom == gameRoom).ToList();
                 var userValues = users.Select((users) => users.Value);
 
                 return Clients.Group(gameRoom).SendAsync("UsersInGame", userValues);
-                // await Clients.Caller.SendAsync("UsersInGame", userValues, activeUSer);
                 
             }
             catch (Exception ex)
             {
                 return null;
             }
+        }
 
+        public Task UsersInRound (string gameRoom) 
+        {
+            var currentGame = _sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == gameRoom);
+            var currentRound = currentGame?.Rounds[^1];
+            var users = currentGame?.Rounds[^1].Users.ToList();
 
+            return Clients.Group(gameRoom).SendAsync("UsersInGame", users);
         }
 
         public Task GameInfo(string gameRoom) 
         {
             var currentGame = _sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == gameRoom);
-            var currentRound = currentGame?.Rounds.Count > 0 ? currentGame?.Rounds[currentGame.Rounds.Count - 1] : new GameRound(); 
+            var currentRound = currentGame?.Rounds.Count > 0 ? currentGame?.Rounds[^1] : new GameRound(); 
 
             return Clients.Group(gameRoom).SendAsync("receiveGameInfo", currentGame, currentRound);
         }
@@ -213,8 +220,8 @@ namespace webbAPI.Hubs
         {
              if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? userConn))
             {
-                var bag = _sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == userConn.GameRoom);
-                if (_sharedDB.CreatedGames.TryTake(out bag))
+                var game = _sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == userConn.GameRoom);
+                if (_sharedDB.CreatedGames.TryTake(out game))
                 {
                     await Clients.Group(userConn.GameRoom).SendAsync("leaveGame");
                 } 
@@ -228,7 +235,17 @@ namespace webbAPI.Hubs
                 _sharedDB.Connection.Remove(Context.ConnectionId, out _);
                 Clients.Group(userConn.GameRoom).SendAsync("GameStatus", $"{userConn.Username} har lämnat spelet");
 
-                UsersInGame(userConn.GameRoom);
+
+                if (_sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == userConn.GameRoom).HasStarted)
+                {
+                    var users = _sharedDB.CreatedGames?.FirstOrDefault(exGame => exGame.JoinCode == userConn.GameRoom).Rounds[^1].Users;
+                    var test = users?.Find(u => u.UserDetails == userConn) ?? new();
+                    users?.Remove(test);
+                    UsersInRound(userConn.GameRoom);    
+                }
+                else {
+                    UsersInGame(userConn.GameRoom);    
+                }
             }
             return base.OnDisconnectedAsync(exception);
         }
