@@ -18,6 +18,7 @@ const Game = () => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [gameActive, setGameActive] = useState(false);
   const [round, setRound] = useState(0);
+  const [roundStarted, setRoundStarted] = useState(false);
   const [roundComplete, setRoundComplete] = useState(false);
   const [word, setWord] = useState("");
   const [time, setTime] = useState(30);
@@ -63,6 +64,10 @@ const Game = () => {
         setRoundComplete(round.roundComplete);
       });
 
+      connection.on("ReceiveTimerData", (time) => {
+        setTime(time);
+      });
+
       connection.on("leaveGame", () => {
         connection.stop();
       });
@@ -88,17 +93,19 @@ const Game = () => {
     }, 4000);
   };
 
-  // useEffect(() => {
-  //   let interval;
-  //   if (gameActive && time > 0) {
-  //     interval = setInterval(() => {
-  //       setTime((prevTime) => prevTime - 1);
-  //     }, 1000);
-  //   } else if (time === 0) {
-  //     setGameActive(false);
-  //   }
-  //   return () => clearInterval(interval);
-  // }, [time, gameActive]);
+  useEffect(() => {
+    let interval;
+    if (time >= 0 && roundStarted) {
+      interval = setInterval(() => {
+        updateTime();
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [roundStarted, time]);
+
+  const updateTime = async () => {
+    await connection.invoke("SendTimerData", time);
+  };
 
   const leaveRoom = async () => {
     console.log("leave");
@@ -109,6 +116,8 @@ const Game = () => {
   const startRound = async () => {
     if (connection) {
       await connection.invoke("StartRound", joinCode);
+      // await connection.invoke("SendTimerData", time);
+      setRoundStarted(true);
     }
   };
 

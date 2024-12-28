@@ -61,9 +61,7 @@ namespace webbAPI.Hubs
                         currentGame.HasStarted = true;
 
                         // Add new Round
-                        currentGame.Rounds.Add(new GameRound{
-                            
-                        });
+                        currentGame.Rounds.Add(new GameRound{});
 
                         // Add users to the round
                         foreach (var user in allUsersInGame)
@@ -218,13 +216,29 @@ namespace webbAPI.Hubs
         
         public async Task EndGame () 
         {
-             if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? userConn))
+            if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? userConn))
             {
                 var game = _sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == userConn.GameRoom);
                 if (_sharedDB.CreatedGames.TryTake(out game))
                 {
                     await Clients.Group(userConn.GameRoom).SendAsync("leaveGame");
                 } 
+            }
+        }
+
+        public async Task SendTimerData (int timerValue)
+        {
+            if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? userConn))
+            {
+                int newTime = timerValue -1;
+                if (newTime == 0)
+                {
+                    var game = _sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == userConn.GameRoom);
+                    if (game != null) game.Rounds[^1].RoundComplete = true;
+                    await GameInfo(userConn.GameRoom);
+
+                }    
+                await Clients.Group(userConn.GameRoom).SendAsync("ReceiveTimerData", newTime);
             }
         }
 
