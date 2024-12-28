@@ -161,7 +161,7 @@ namespace webbAPI.Hubs
 
                     if (!users.Where(user => !user.IsDrawing && !user.HasGuessedCorrectly).Any())
                     {
-                        currentRound.RoundComplete = true;
+                        await EndRound(currentRound, userConn.GameRoom);
                     }
 
                     await UsersInRound(userConn.GameRoom);
@@ -213,6 +213,29 @@ namespace webbAPI.Hubs
         {
             await Clients.Group(gameRoom).SendAsync("clearCanvas");
         }
+
+        public Task EndRound (GameRound round, string gameRoom) 
+        {
+            round.RoundComplete = true;
+
+            var winner = round.Users.Find(user => user.GuessedFirst);
+            winner.Points = 5;
+
+            var usersGuessedCorrectly = round.Users.FindAll(user => !user.GuessedFirst && !user.IsDrawing && user.HasGuessedCorrectly);
+
+            foreach (var user in usersGuessedCorrectly)
+            {
+                user.Points = 3;
+            }
+
+            var artists = round.Users.FindAll(user => user.IsDrawing);
+
+            foreach (var user in artists)
+            {
+                user.Points = 4;
+            }
+            return Clients.Group(gameRoom).SendAsync("RoundEnded");
+        }
         
         public async Task EndGame () 
         {
@@ -233,10 +256,10 @@ namespace webbAPI.Hubs
                 int newTime = timerValue -1;
                 if (newTime == 0)
                 {
-                    var game = _sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == userConn.GameRoom);
-                    if (game != null) game.Rounds[^1].RoundComplete = true;
+                    var currentRound = _sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == userConn.GameRoom).Rounds[^1];
+                    await EndRound(currentRound, userConn.GameRoom);
                     await GameInfo(userConn.GameRoom);
-
+                    await UsersInGame(userConn.GameRoom);
                 }    
                 await Clients.Group(userConn.GameRoom).SendAsync("ReceiveTimerData", newTime);
             }

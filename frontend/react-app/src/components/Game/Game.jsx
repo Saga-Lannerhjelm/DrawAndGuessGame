@@ -68,6 +68,10 @@ const Game = () => {
         setTime(time);
       });
 
+      connection.on("RoundEnded", (time) => {
+        setRoundStarted(false);
+      });
+
       connection.on("leaveGame", () => {
         connection.stop();
       });
@@ -115,9 +119,10 @@ const Game = () => {
 
   const startRound = async () => {
     if (connection) {
-      await connection.invoke("StartRound", joinCode);
-      // await connection.invoke("SendTimerData", time);
+      setTime(30);
       setRoundStarted(true);
+      setRoundComplete(false);
+      await connection.invoke("StartRound", joinCode);
     }
   };
 
@@ -144,7 +149,7 @@ const Game = () => {
       <div className="game-container">
         <div>
           {roundComplete ? (
-            <ResultCard />
+            <ResultCard startNewRound={startRound} />
           ) : gameActive ? (
             <>
               <TopSection time={time} round={round} />
