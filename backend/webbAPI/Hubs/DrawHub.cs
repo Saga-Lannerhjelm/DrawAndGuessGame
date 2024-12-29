@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -197,7 +198,7 @@ namespace webbAPI.Hubs
             var currentGame = _sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == gameRoom);
             var currentRound = currentGame?.Rounds[^1];
             var users = currentGame?.Rounds[^1].Users.ToList();
-
+            
             return Clients.Group(gameRoom).SendAsync("UsersInGame", users);
         }
 
@@ -219,10 +220,10 @@ namespace webbAPI.Hubs
             round.RoundComplete = true;
 
             var winner = round.Users.Find(user => user.GuessedFirst);
-            winner.Points = 5;
+            if (winner != null) winner.Points = 5;
 
             var usersGuessedCorrectly = round.Users.FindAll(user => !user.GuessedFirst && !user.IsDrawing && user.HasGuessedCorrectly);
-
+            
             foreach (var user in usersGuessedCorrectly)
             {
                 user.Points = 3;
@@ -253,15 +254,20 @@ namespace webbAPI.Hubs
         {
             if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? userConn))
             {
-                int newTime = timerValue -1;
-                if (newTime == 0)
+                while (timerValue >= 0)
                 {
-                    var currentRound = _sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == userConn.GameRoom).Rounds[^1];
-                    await EndRound(currentRound, userConn.GameRoom);
-                    await GameInfo(userConn.GameRoom);
-                    await UsersInGame(userConn.GameRoom);
-                }    
-                await Clients.Group(userConn.GameRoom).SendAsync("ReceiveTimerData", newTime);
+                    timerValue--;
+                    if (timerValue == 0)
+                    {
+                        var currentRound = _sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == userConn.GameRoom).Rounds[^1];
+                        await EndRound(currentRound, userConn.GameRoom);
+                        await GameInfo(userConn.GameRoom);
+                        await UsersInGame(userConn.GameRoom);
+                    }    
+                    await Clients.Group(userConn.GameRoom).SendAsync("ReceiveTimerData", timerValue);
+                    await Task.Delay(1000);
+                }
+
             }
         }
 

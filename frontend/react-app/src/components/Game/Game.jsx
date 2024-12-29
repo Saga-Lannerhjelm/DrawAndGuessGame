@@ -97,20 +97,6 @@ const Game = () => {
     }, 4000);
   };
 
-  useEffect(() => {
-    let interval;
-    if (time >= 0 && roundStarted) {
-      interval = setInterval(() => {
-        updateTime();
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [roundStarted, time]);
-
-  const updateTime = async () => {
-    await connection.invoke("SendTimerData", time);
-  };
-
   const leaveRoom = async () => {
     console.log("leave");
     await connection.stop();
@@ -123,6 +109,7 @@ const Game = () => {
       setRoundStarted(true);
       setRoundComplete(false);
       await connection.invoke("StartRound", joinCode);
+      // await connection.invoke("SendTimerData", time);
     }
   };
 
