@@ -103,7 +103,7 @@ namespace webbAPI.Repositories
                     game = new Game{
                         RoomName = reader.GetString("name"),
                         JoinCode = reader.GetString("join_code"),
-                        IsActive = reader.GetBoolean("is_active"),
+                        IsActive = reader.GetByte("is_active") == 1,
                         CreatorId = reader.GetInt32("creator_id")
                     };
                 }

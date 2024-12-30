@@ -2,47 +2,68 @@ using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 using webbAPI.DataService;
 using webbAPI.Models;
+using webbAPI.Repositories;
 
 namespace webbAPI.Hubs
 {
     public class DrawHub : Hub
     {   
         private readonly SharedDB _sharedDB;
+        private readonly GameRepository _gameRepository;
 
-        public DrawHub (SharedDB sharedDB)
+        public DrawHub (SharedDB sharedDB, GameRepository gameRepository)
         {
             _sharedDB = sharedDB;
+            _gameRepository = gameRepository;
         }
         public async Task JoinGame (UserConnection userConn) 
         {
             // If game exist
-            if (_sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == userConn.GameRoom && exGame.IsActive == false) != null)
+            var existingGame = _gameRepository.GetGameByJoinCode(userConn.JoinCode, out string error);
+
+            if (existingGame != null || string.IsNullOrEmpty(error))
             {
-                await Groups.AddToGroupAsync(Context.ConnectionId, userConn.GameRoom);
+                await Groups.AddToGroupAsync(Context.ConnectionId, userConn.JoinCode);
                 // Add user (to game)
                 _sharedDB.Connection[Context.ConnectionId] = userConn;
 
+                 await Clients.OthersInGroup(userConn.JoinCode).SendAsync("GameStatus", $"{userConn.Username} anslöt till spelet", true);
+                await Clients.Caller.SendAsync("GameStatus", $"Välkommen till spelet. Anslutningkoden är {userConn.JoinCode}", true);
 
-                await Clients.OthersInGroup(userConn.GameRoom).SendAsync("GameStatus", $"{userConn.Username} anslöt till spelet", true);
-                await Clients.Caller.SendAsync("GameStatus", $"Välkommen till spelet. Anslutningkoden är {userConn.GameRoom}", true);
-
-                await UsersInGame(userConn.GameRoom);
+                await UsersInGame(userConn.JoinCode);
                 // await GameInfo(userConn.GameRoom);
-            } else {
+            }
+            else 
+            {
                 await Clients.Caller.SendAsync("GameStatus", $"Spelet finns inte eller har redan startat", false);
             }
+            // if (_sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == userConn.JoinCode && exGame.IsActive == false) != null)
+            // {
+            //     await Groups.AddToGroupAsync(Context.ConnectionId, userConn.JoinCode);
+            //     // Add user (to game)
+            //     _sharedDB.Connection[Context.ConnectionId] = userConn;
+
+
+            //     await Clients.OthersInGroup(userConn.JoinCode).SendAsync("GameStatus", $"{userConn.Username} anslöt till spelet", true);
+            //     await Clients.Caller.SendAsync("GameStatus", $"Välkommen till spelet. Anslutningkoden är {userConn.JoinCode}", true);
+
+            //     await UsersInGame(userConn.JoinCode);
+            //     // await GameInfo(userConn.GameRoom);
+            // } else {
+            //     await Clients.Caller.SendAsync("GameStatus", $"Spelet finns inte eller har redan startat", false);
+            // }
         }
 
         public async Task StartRound(string gameRoom)
         {
             // Get users in game
             var users = _sharedDB.Connection
-            .Where(g => g.Value.GameRoom == gameRoom).ToList();
+            .Where(g => g.Value.JoinCode == gameRoom).ToList();
 
             int usersInGameNr = users.Count;
 
             var allUsersInGame = _sharedDB.Connection.Values
-            .Where(g => g.GameRoom == gameRoom).ToList();
+            .Where(g => g.JoinCode == gameRoom).ToList();
 
             try
             {
@@ -178,7 +199,7 @@ namespace webbAPI.Hubs
             try
             {
                 var users = _sharedDB.Connection
-                .Where(g => g.Value.GameRoom == gameRoom).ToList();
+                .Where(g => g.Value.JoinCode == gameRoom).ToList();
                 var userValues = users.Select((users) => users.Value);
 
                 return Clients.Group(gameRoom).SendAsync("UsersInGame", userValues);
@@ -239,10 +260,10 @@ namespace webbAPI.Hubs
         {
             if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? userConn))
             {
-                var game = _sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == userConn.GameRoom);
+                var game = _sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == userConn.JoinCode);
                 if (_sharedDB.CreatedGames.TryTake(out game))
                 {
-                    await Clients.Group(userConn.GameRoom).SendAsync("leaveGame");
+                    await Clients.Group(userConn.JoinCode).SendAsync("leaveGame");
                 } 
             }
         }

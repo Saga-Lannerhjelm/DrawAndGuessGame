@@ -9,8 +9,8 @@ namespace webbAPI.Models
     {
         public int Id { get; set; }
         public string Username { get; set; } = string.Empty;
-        public string GameRoom { get; set; } = string.Empty;
-        public int TotalPoints { get; set; } = 0;
-        public int Winns { get; set; } = 0;
+        public string JoinCode { get; set; } = string.Empty;
+        // public int TotalPoints { get; set; } = 0;
+        // public int Winns { get; set; } = 0;
     }
 }

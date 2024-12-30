@@ -27,7 +27,7 @@ namespace webbAPI.Controllers
             };
             int userId = _userRepository.Insert(user, out string error);
 
-            if (userId == 0 || string.IsNullOrEmpty(error))
+            if (userId == 0 || !string.IsNullOrEmpty(error))
             {
                 return BadRequest();
             }

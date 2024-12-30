@@ -22,10 +22,15 @@ const Home = () => {
   // Also check so that it is unique compared to the existing games in the database
   const createRoom = async (roomName) => {
     const gameRoomCode = Math.round(Math.random() * 100000000);
+    let userId;
 
-    const userId = addUser(randomUsername);
+    try {
+      userId = await addUser(randomUsername);
+    } catch (error) {
+      console.error("Kunde inte lägga till användare:", error);
+    }
 
-    if (userId !== null) {
+    if (userId) {
       const game = {
         RoomName: roomName,
         JoinCode: gameRoomCode.toString(),
@@ -33,53 +38,82 @@ const Home = () => {
         CreatorId: userId,
       };
 
-      await fetch("http://localhost:5034/Game", {
+      try {
+        const response = await fetch("http://localhost:5034/Game", {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(game),
+        });
+
+        if (response.ok) {
+          joinRoom(gameRoomCode, userId);
+        } else {
+          console.error(
+            "Fel vid API-anrop:",
+            response.status,
+            await response.text()
+          );
+          throw new Error("API-anrop misslyckades");
+        }
+      } catch (error) {
+        console.error("Ett fel inträffade:", error);
+      }
+    }
+  };
+
+  const joinExistingRoom = async () => {
+    let userId;
+    try {
+      userId = await addUser(randomUsername);
+    } catch (error) {
+      console.error("Kunde inte lägga till användare:", error);
+    }
+
+    if (userId) {
+      joinRoom(inviteCode, userId);
+    }
+  };
+
+  const addUser = async (userName) => {
+    console.log("in add");
+    try {
+      const response = await fetch("http://localhost:5034/User", {
         method: "POST",
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(game),
-      })
-        .then((res) => {
-          console.log(res);
-          if (res.status === 200) {
-            joinRoom(gameRoomCode);
-          } else {
-            console.log(res);
-          }
-        })
-        .catch((er) => console.error(er));
+        body: JSON.stringify(userName),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data;
+      } else {
+        console.error(
+          "Fel vid API-anrop:",
+          response.status,
+          await response.text()
+        );
+        throw new Error("API-anrop misslyckades");
+      }
+    } catch (error) {
+      console.error("Ett fel inträffade:", error);
     }
   };
 
-  const addUser = async (userName) => {
-    await fetch("http://localhost:5034/User", {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(userName),
-    })
-      .then((res) => {
-        if (res.status === 200) {
-          return res;
-        } else {
-          console.log(res);
-        }
-      })
-      .catch((er) => console.error(er));
-  };
-
-  const joinRoom = async (gameRoomCode) => {
+  const joinRoom = async (gameRoomCode, userId) => {
+    console.log("USerID in join:", userId);
     if (!loading) {
-      startConnection(randomUsername, gameRoomCode);
+      startConnection(randomUsername, gameRoomCode, userId);
       setActiveUser(randomUsername);
     }
   };
 
-  async function startConnection(userName, gameRoomCode) {
+  async function startConnection(userName, gameRoomCode, userId) {
     if (!connection) {
       const newConnection = new HubConnectionBuilder()
         .withUrl("http://localhost:5034/draw")
@@ -107,8 +141,8 @@ const Home = () => {
 
       try {
         await newConnection.start();
-        const gameRoom = gameRoomCode.toString();
-        newConnection.invoke("JoinGame", { userName, gameRoom });
+        const joinCode = gameRoomCode.toString();
+        newConnection.invoke("JoinGame", { id: userId, userName, joinCode });
       } catch (error) {
         console.error();
       }
@@ -166,7 +200,7 @@ const Home = () => {
           className="standard-form"
           onSubmit={(e) => {
             e.preventDefault();
-            joinRoom(inviteCode);
+            joinExistingRoom();
           }}
         >
           <input
