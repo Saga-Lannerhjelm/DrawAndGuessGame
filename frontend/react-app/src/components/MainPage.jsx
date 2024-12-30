@@ -23,25 +23,48 @@ const Home = () => {
   const createRoom = async (roomName) => {
     const gameRoomCode = Math.round(Math.random() * 100000000);
 
-    const game = {
-      RoomName: roomName,
-      JoinCode: gameRoomCode.toString(),
-      HasStarted: false,
-      Rounds: [],
-    };
+    const userId = addUser(randomUsername);
 
-    await fetch("http://localhost:5034/Game", {
+    if (userId !== null) {
+      const game = {
+        RoomName: roomName,
+        JoinCode: gameRoomCode.toString(),
+        IsActive: false,
+        CreatorId: userId,
+      };
+
+      await fetch("http://localhost:5034/Game", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(game),
+      })
+        .then((res) => {
+          console.log(res);
+          if (res.status === 200) {
+            joinRoom(gameRoomCode);
+          } else {
+            console.log(res);
+          }
+        })
+        .catch((er) => console.error(er));
+    }
+  };
+
+  const addUser = async (userName) => {
+    await fetch("http://localhost:5034/User", {
       method: "POST",
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(game),
+      body: JSON.stringify(userName),
     })
       .then((res) => {
-        console.log(res);
         if (res.status === 200) {
-          joinRoom(gameRoomCode);
+          return res;
         } else {
           console.log(res);
         }
