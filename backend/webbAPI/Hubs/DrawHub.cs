@@ -42,29 +42,10 @@ namespace webbAPI.Hubs
             {
                 await Clients.Caller.SendAsync("GameStatus", $"Spelet finns inte eller har redan startat", false);
             }
-            // if (_sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == userConn.JoinCode && exGame.IsActive == false) != null)
-            // {
-            //     await Groups.AddToGroupAsync(Context.ConnectionId, userConn.JoinCode);
-            //     // Add user (to game)
-            //     _sharedDB.Connection[Context.ConnectionId] = userConn;
-
-
-            //     await Clients.OthersInGroup(userConn.JoinCode).SendAsync("GameStatus", $"{userConn.Username} anslöt till spelet", true);
-            //     await Clients.Caller.SendAsync("GameStatus", $"Välkommen till spelet. Anslutningkoden är {userConn.JoinCode}", true);
-
-            //     await UsersInGame(userConn.JoinCode);
-            //     // await GameInfo(userConn.GameRoom);
-            // } else {
-            //     await Clients.Caller.SendAsync("GameStatus", $"Spelet finns inte eller har redan startat", false);
-            // }
         }
 
         public async Task StartRound(string joinCode)
         {
-            // Get users in game
-            // var users = _sharedDB.Connection
-            // .Where(g => g.Value.JoinCode == joinCode).ToList();
-
             var allUsersInGame = _sharedDB.Connection.Values
             .Where(g => g.JoinCode == joinCode).ToList();
 
@@ -352,36 +333,15 @@ namespace webbAPI.Hubs
         //     return Clients.Group(gameRoom).SendAsync("RoundEnded");
         // }
         
-        public async Task EndGame () 
-        {
-            if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? userConn))
-            {
-                var game = _sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == userConn.JoinCode);
-                if (_sharedDB.CreatedGames.TryTake(out game))
-                {
-                    await Clients.Group(userConn.JoinCode).SendAsync("leaveGame");
-                } 
-            }
-        }
-
-        // public async Task SendTimerData (int timerValue)
+        // public async Task EndGame () 
         // {
         //     if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? userConn))
         //     {
-        //         while (timerValue >= 0)
+        //         var game = _sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == userConn.JoinCode);
+        //         if (_sharedDB.CreatedGames.TryTake(out game))
         //         {
-        //             timerValue--;
-        //             if (timerValue == 0)
-        //             {
-        //                 var currentRound = _sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == userConn.GameRoom).Rounds[^1];
-        //                 await EndRound(currentRound, userConn.GameRoom);
-        //                 await GameInfo(userConn.GameRoom);
-        //                 await UsersInGame(userConn.GameRoom);
-        //             }    
-        //             await Clients.Group(userConn.GameRoom).SendAsync("ReceiveTimerData", timerValue);
-        //             await Task.Delay(1000);
-        //         }
-
+        //             await Clients.Group(userConn.JoinCode).SendAsync("leaveGame");
+        //         } 
         //     }
         // }
 
