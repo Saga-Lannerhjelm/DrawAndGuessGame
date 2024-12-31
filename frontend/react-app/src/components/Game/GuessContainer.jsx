@@ -15,25 +15,18 @@ const GuessContainer = ({ userIsDrawing, userGuesses }) => {
         setUsers(userValues);
         console.log("Users:", userValues);
         console.log("AcriveUser:", activeUser);
-
-        if (users.length > 0 && users[0].username == undefined) {
-          userIsDrawing(
-            users.find((user) => user.user.username == activeUser).userInRound
-              .isDrawing
-          );
-        }
       });
     }
   }, [connection]);
 
-  // useEffect(() => {
-  //   if (users.length > 0 && users[0].userInRound.isDrawing !== undefined) {
-  //     userIsDrawing(
-  //       users.find((user) => user.user.username == activeUser).userInRound
-  //         .isDrawing
-  //     );
-  //   }
-  // }, [users]);
+  useEffect(() => {
+    if (users.length > 0 && users[0].username == undefined) {
+      userIsDrawing(
+        users.find((user) => user.user.username == activeUser).userInRound
+          .isDrawing
+      );
+    }
+  }, [users]);
 
   return (
     <div className="user-container">

@@ -35,7 +35,7 @@ namespace webbAPI.Hubs
                 await Clients.Caller.SendAsync("GameStatus", $"Välkommen till spelet. Anslutningkoden är {userConn.JoinCode}", true);
 
                 await UsersInGame(userConn.JoinCode);
-                // await GameInfo(userConn.GameRoom);
+                await GameInfo(userConn.JoinCode);
             }
             else 
             {
@@ -157,7 +157,7 @@ namespace webbAPI.Hubs
                         await Clients.Group(joinCode).SendAsync("GameCanStart", true);
                         await Clients.Group(joinCode).SendAsync("GameStatus", $"{drawingUserOne.Username} och {drawingUserTwo.Username} ritar!");
                         await UsersInRound(roundId, currentGame.JoinCode);
-                        // await GameInfo(gameRoom);
+                        await GameInfo(joinCode);
                         // currentGame.Rounds[^1].Users.Add(new User{UserDetails = user});
                         
                     }
@@ -265,9 +265,6 @@ namespace webbAPI.Hubs
 
         public Task GameInfo(string joinCode) 
         {
-            // var currentGame = _sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == gameRoom);
-            // var currentRound = currentGame?.Rounds.Count > 0 ? currentGame?.Rounds[^1] : new GameRound(); 
-
             string error = "";
             var currentGame = new Game();
             var currentRound = new GameRound();
@@ -280,7 +277,7 @@ namespace webbAPI.Hubs
                 {
                     currentRound = _gameRoundRepository.GetGameRoundByGameId(currentGame.Id, out error);
 
-                    if (currentRound == null && !string.IsNullOrEmpty(error))
+                    if (!string.IsNullOrEmpty(error))
                     {
                         throw new Exception(error);
                     }
@@ -290,8 +287,8 @@ namespace webbAPI.Hubs
             {
                 Console.WriteLine("Error:", ex);
             }
+            
             return Clients.Group(joinCode).SendAsync("receiveGameInfo", currentGame, currentRound);
-
         }
 
         public async Task SendClearCanvas (string gameRoom) 

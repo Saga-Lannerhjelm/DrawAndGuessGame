@@ -58,10 +58,13 @@ const Game = () => {
 
       connection.on("receiveGameInfo", (game, round) => {
         setRoomName(game.roomName);
-        setGameActive(game.hasStarted);
-        setRound(game.rounds.length);
-        setWord(round.word);
-        setRoundComplete(round.roundComplete);
+        setGameActive(game.isActive);
+        if (round.id != 0) {
+          setRound(round.roundNr);
+          setWord(round.word);
+          setRoundComplete(round.roundComplete);
+        }
+        console.log(game, round);
       });
 
       connection.on("ReceiveTimerData", (time) => {
