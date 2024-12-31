@@ -66,6 +66,34 @@ namespace webbAPI.Repositories
             }
         }
 
+        public int UpdateUserInRound(UserInRound user, out string errorMsg) 
+        {
+            string query = "UPDATE user_in_round SET is_drawing = @isDrawing, points = @points, guessed_correctly = @guessedCorrectly, guessed_first = @guessedFirst, user_id = @userId, game_round_id = @gameRoundId WHERE id = @userInRoundId;";
+            errorMsg = "";
+
+            using SqlConnection dbConnection = new(_connectionString);
+            try
+            {
+                var dbCommand = new SqlCommand(query, dbConnection);
+                dbCommand.Parameters.Add("@isDrawing", SqlDbType.TinyInt).Value = user.IsDrawing;
+                dbCommand.Parameters.Add("@points", SqlDbType.Int).Value = user.Points;
+                dbCommand.Parameters.Add("@guessedCorrectly", SqlDbType.TinyInt).Value = user.GuessedCorrectly;
+                dbCommand.Parameters.Add("@guessedFirst", SqlDbType.TinyInt).Value = user.GuessedFirst;
+                dbCommand.Parameters.Add("@userId", SqlDbType.Int).Value = user.UserId;
+                dbCommand.Parameters.Add("@gameRoundId", SqlDbType.Int).Value = user.GameRoundId;
+                dbCommand.Parameters.Add("@userInRoundId", SqlDbType.Int).Value = user.Id;
+
+                dbConnection.Open();
+
+                return dbCommand.ExecuteNonQuery();
+            }
+            catch (Exception e)
+            {
+                errorMsg = e.Message;
+                return 0;
+            }
+        }
+
         public List<UserVM>? GetUsersByRound (int roundId, out string errorMsg) 
         {
             string query = "SELECT user_in_round.id AS userInRoundId, user_in_round.*, users.id AS userId, users.* FROM user_in_round INNER JOIN users ON users.id = user_id WHERE game_round_id = @roundId";

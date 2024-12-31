@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 using webbAPI.DataService;
 using webbAPI.Models;
+using webbAPI.Models.ViewModels;
 using webbAPI.Repositories;
 
 namespace webbAPI.Hubs
@@ -200,38 +201,70 @@ namespace webbAPI.Hubs
 
         public async Task SendGuess(string guess)
         {
-            // if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? userConn))
-            // {
-            //      var currentGame = _sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == userConn.GameRoom);
-            //      var currentRound = currentGame?.Rounds[^1];
-            //      var activeUser = currentGame?.Rounds[^1].Users.Find(u => u.UserDetails.Username == userConn.Username) ?? new User();
+            if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? userConn))
+            {
+                string error = "";
+                var currentGame = new Game();
+                var currentRound = new GameRound();
 
-            //     if (guess == currentRound?.Word)
-            //     {
+                try
+                {
+                    currentGame = _gameRepository.GetGameByJoinCode(userConn.JoinCode, out error);
 
-            //         var users = currentRound.Users.Where(g => g.UserDetails.GameRoom == userConn.GameRoom).ToList();
+                    if (currentGame != null && string.IsNullOrEmpty(error))
+                    {
+                        currentRound = _gameRoundRepository.GetGameRoundByGameId(currentGame.Id, out error);
 
-            //         if (!users.Where(user => user.HasGuessedCorrectly).Any())
-            //         {
-            //             activeUser.GuessedFirst = true;
-            //         }
+                        if (!string.IsNullOrEmpty(error))
+                        {
+                            throw new Exception(error);
+                        }
+                        if (guess == currentRound?.Word)
+                        {
 
-            //         activeUser.HasGuessedCorrectly = true;
+                            var users = _userRepository.GetUsersByRound(currentRound.Id, out error);
 
-            //         if (!users.Where(user => !user.IsDrawing && !user.HasGuessedCorrectly).Any())
-            //         {
-            //             await EndRound(currentRound, userConn.GameRoom);
-            //         }
+                            var guessingUser = users?.Find(u => u.User.Username == userConn.Username) ?? new UserVM();
 
-            //         await UsersInRound(userConn.GameRoom);
-            //         await GameInfo(userConn.GameRoom);
-            //         await Clients.Caller.SendAsync("ReceiveGuess", guess, userConn.Username);
-            //         await Clients.OthersInGroup(userConn.GameRoom).SendAsync("ReceiveGuess", "Gissade rätt", userConn.Username);
-            //     } else {
-            //         await Clients.Group(userConn.GameRoom).SendAsync("ReceiveGuess", guess, userConn.Username);
-            //     }
-            // }
+                            if (users == null || !string.IsNullOrEmpty(error))
+                            {
+                                throw new Exception(error);
+                            }
 
+                            if (!users.Where(user => user.UserInRound.GuessedCorrectly).Any())
+                            {
+                                guessingUser.UserInRound.GuessedFirst = true;
+                            }
+
+                            guessingUser.UserInRound.GuessedCorrectly = true;
+
+                            if (!users.Where(user => !user.UserInRound.IsDrawing && !user.UserInRound.GuessedCorrectly).Any())
+                            {
+                                // await EndRound(currentRound, userConn.GameRoom);
+                            }
+
+                            // Update user
+                            var effectedRows = _userRepository.UpdateUserInRound(guessingUser.UserInRound, out error);
+
+                            if (effectedRows == 0 && string.IsNullOrEmpty(error))
+                            {
+                                throw new Exception(error);
+                            }
+
+                            await UsersInRound(currentRound.Id ,userConn.JoinCode);
+                            await GameInfo(currentGame.JoinCode);
+                            await Clients.Caller.SendAsync("ReceiveGuess", guess, userConn.Id);
+                            await Clients.OthersInGroup(currentGame.JoinCode).SendAsync("ReceiveGuess", "Gissade rätt", userConn.Id);
+                        } else {
+                            await Clients.Group(currentGame.JoinCode).SendAsync("ReceiveGuess", guess, userConn.Id);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error:", ex);
+                }
+            }
         }
 
         public Task UsersInGame(string gameRoom) 
@@ -287,7 +320,7 @@ namespace webbAPI.Hubs
             {
                 Console.WriteLine("Error:", ex);
             }
-            
+
             return Clients.Group(joinCode).SendAsync("receiveGameInfo", currentGame, currentRound);
         }
 

@@ -40,20 +40,20 @@ const Game = () => {
         // setRound(round + 1);
       });
 
-      connection.on("ReceiveGuess", (guess, user) => {
+      connection.on("ReceiveGuess", (guess, userId) => {
         setUserGuesses((prevGuesses) => {
           const existingGuessIndex = prevGuesses.findIndex(
-            (g) => g.user === user
+            (g) => g.userId === userId
           );
           if (existingGuessIndex !== -1) {
             const updatedGuesses = [...prevGuesses];
-            updatedGuesses[existingGuessIndex] = { user, guess };
+            updatedGuesses[existingGuessIndex] = { userId, guess };
             return updatedGuesses;
           } else {
-            return [...prevGuesses, { user, guess }];
+            return [...prevGuesses, { userId, guess }];
           }
         });
-        displayMessage(user);
+        displayMessage(userId);
       });
 
       connection.on("receiveGameInfo", (game, round) => {
@@ -81,7 +81,7 @@ const Game = () => {
     }
   }, [connection]);
 
-  const displayMessage = (user) => {
+  const displayMessage = (userId) => {
     console.log("in display");
     if (timeOutRef.current) {
       clearTimeout(timeOutRef.current);
@@ -90,7 +90,7 @@ const Game = () => {
     timeOutRef.current = setTimeout(() => {
       setUserGuesses((prevGuesses) => {
         const existingGuessIndex = prevGuesses.findIndex(
-          (g) => g.user === user
+          (g) => g.userId === userId
         );
         const guesses = [...prevGuesses];
         guesses.splice(existingGuessIndex, 1);
