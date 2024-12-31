@@ -94,6 +94,35 @@ namespace webbAPI.Repositories
             }
         }
 
+        public int DeleteUserInRound (int id, out string errorMsg) 
+        {
+            string query = "DELETE FROM user_in_round WHERE id = @id";
+            errorMsg = "";
+
+            using SqlConnection dbConnection = new(_connectionString);
+            try
+            {
+                var dbCommand = new SqlCommand(query, dbConnection);
+                dbCommand.Parameters.Add("@id", SqlDbType.Int).Value = id;
+
+                dbConnection.Open();
+
+                var rowsAffected = dbCommand.ExecuteNonQuery();
+
+                if (rowsAffected == 0)
+                {
+                    errorMsg = "No rows were deleted. The ID might not exist.";
+                }
+
+                return rowsAffected;
+            }
+            catch (Exception e)
+            {
+                errorMsg = e.Message;
+                return 0;
+            }
+        }
+
         public List<UserVM>? GetUsersByRound (int roundId, out string errorMsg) 
         {
             string query = "SELECT user_in_round.id AS userInRoundId, user_in_round.*, users.id AS userId, users.* FROM user_in_round INNER JOIN users ON users.id = user_id WHERE game_round_id = @roundId";

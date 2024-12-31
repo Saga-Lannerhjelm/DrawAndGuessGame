@@ -385,26 +385,48 @@ namespace webbAPI.Hubs
         //     }
         // }
 
-        // public override Task OnDisconnectedAsync(Exception? exception)
-        // {
-        //      if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? userConn))
-        //     {
-        //         _sharedDB.Connection.Remove(Context.ConnectionId, out _);
-        //         Clients.Group(userConn.GameRoom).SendAsync("GameStatus", $"{userConn.Username} har lämnat spelet");
+        public override Task OnDisconnectedAsync(Exception? exception)
+        {
+             if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? userConn))
+            {
+                _sharedDB.Connection.Remove(Context.ConnectionId, out _);
+                Clients.Group(userConn.JoinCode).SendAsync("GameStatus", $"{userConn.Username} har lämnat spelet");
 
+                var currentGame = _gameRepository.GetGameByJoinCode(userConn.JoinCode, out string error);
 
-        //         if (_sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == userConn.GameRoom).IsActive)
-        //         {
-        //             var users = _sharedDB.CreatedGames?.FirstOrDefault(exGame => exGame.JoinCode == userConn.GameRoom).Rounds[^1].Users;
-        //             var test = users?.Find(u => u.UserDetails == userConn) ?? new();
-        //             users?.Remove(test);
-        //             UsersInRound(userConn.GameRoom);    
-        //         }
-        //         else {
-        //             UsersInGame(userConn.GameRoom);    
-        //         }
-        //     }
-        //     return base.OnDisconnectedAsync(exception);
-        // }
+                if (currentGame != null && string.IsNullOrEmpty(error))
+                {
+                    if (currentGame.IsActive)
+                    {
+
+                        var currentRound = _gameRoundRepository.GetGameRoundByGameId(currentGame.Id, out error);
+
+                        if (currentRound != null && string.IsNullOrEmpty(error))
+                        {   
+                            var users = _userRepository.GetUsersByRound(currentRound.Id, out error);
+
+                            if (users == null || !string.IsNullOrEmpty(error))
+                            {
+                                Console.WriteLine("Error: ", error);
+                            }
+
+                            var disconnectedUser = users?.Find(u => u.User.Id == userConn.Id)?.UserInRound ?? new UserInRound();
+                            var affectedRows = _userRepository.DeleteUserInRound(disconnectedUser.Id, out error);
+
+                            if (!string.IsNullOrEmpty(error))
+                            {
+                                Console.WriteLine("Error: ", error);
+                            }
+
+                            UsersInRound(currentRound.Id, userConn.JoinCode);    
+                        }
+                    }
+                }
+                else {
+                    UsersInGame(userConn.JoinCode);    
+                }
+            }
+            return base.OnDisconnectedAsync(exception);
+        }
     }
 }

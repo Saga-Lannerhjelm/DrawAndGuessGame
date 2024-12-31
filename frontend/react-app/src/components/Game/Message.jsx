@@ -4,7 +4,9 @@ const Message = ({ message, correct }) => {
   return (
     <>
       <div className="guess-box">
-        <div style={correct ? { color: "green" } : {}}>{message}</div>
+        <div style={correct ? { color: "green" } : { color: "black" }}>
+          {message}
+        </div>
         <svg
           width="56"
           height="37"

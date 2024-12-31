@@ -61,17 +61,12 @@ const GuessContainer = ({ userIsDrawing, userGuesses }) => {
             </div>
           ) : (
             <div
-              className={user.userInRound.isDrawing ? "user drawing" : "user"}
-              style={
-                user.userInRound.guessedCorrectly
-                  ? { borderColor: "#00FF2F" }
-                  : {}
-              }
+              className={user.isDrawing ? "user drawing" : "user"}
+              style={user.guessedCorrectly ? { borderColor: "#00FF2F" } : {}}
             >
               <div>
                 <p>
-                  {user.user.username}{" "}
-                  {user.user.username == activeUser ? "(Du)" : ""}
+                  {user.username} {user.username == activeUser ? "(Du)" : ""}
                 </p>
                 <p></p>
               </div>
