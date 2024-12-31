@@ -37,16 +37,17 @@ namespace webbAPI.Repositories
             }
         }
 
-        public int UpdateActiveState (Game game, out string errorMsg) 
+        public int UpdateActiveState (int gameId, bool activeState, out string errorMsg) 
         {
-            string query = "UPDATE games SET is_active = @isActive)";
+            string query = "UPDATE games SET is_active = @isActive WHERE id = @gameId;";
             errorMsg = "";
 
             using SqlConnection dbConnection = new(_connectionString);
             try
             {
                 var dbCommand = new SqlCommand(query, dbConnection);
-                dbCommand.Parameters.Add("@isActive", SqlDbType.TinyInt).Value = game.IsActive;
+                dbCommand.Parameters.Add("@gameId", SqlDbType.Int).Value = gameId;
+                dbCommand.Parameters.Add("@isActive", SqlDbType.TinyInt).Value = activeState;
 
                 dbConnection.Open();
 
@@ -101,6 +102,7 @@ namespace webbAPI.Repositories
                 while (reader.Read())
                 {
                     game = new Game{
+                        Id = reader.GetInt32("id"),
                         RoomName = reader.GetString("name"),
                         JoinCode = reader.GetString("join_code"),
                         IsActive = reader.GetByte("is_active") == 1,

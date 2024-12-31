@@ -7,6 +7,7 @@ namespace webbAPI.Models
 {
     public class UserInRound
     {
+        public int Id { get; set; }
         public bool IsDrawing { get; set; } = false;
         public int Points { get; set; } = 0;
         public bool GuessedCorrectly { get; set; } = false;

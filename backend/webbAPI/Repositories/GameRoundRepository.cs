@@ -14,7 +14,7 @@ namespace webbAPI.Repositories
 
         public int Insert(GameRound round, out string errorMsg) 
         {
-            string query = "INSERT INTO game_rounds (word, round_nr, round_complete, game_id) VALUES (@word, @roundNr, @roundComplete, @gameId)";
+            string query = "INSERT INTO game_rounds (word, round_nr, round_complete, game_id) VALUES (@word, (SELECT COUNT(*) + 1 FROM game_rounds WHERE game_id = @gameId), @roundComplete, @gameId); SELECT SCOPE_IDENTITY() AS id;";
             errorMsg = "";
 
             using SqlConnection dbConnection = new(_connectionString);
@@ -28,7 +28,7 @@ namespace webbAPI.Repositories
 
                 dbConnection.Open();
 
-                return dbCommand.ExecuteNonQuery();
+                return Convert.ToInt32(dbCommand.ExecuteScalar());
             }
             catch (Exception e)
             {
@@ -81,5 +81,41 @@ namespace webbAPI.Repositories
         //         return 0;
         //     }
         // }
+
+        public GameRound? GetGameRoundByGameId (int gameId, out string errorMsg) 
+        {
+            string query = "SELECT * FROM game_rounds WHERE game_id = @gameId";
+            errorMsg = "";
+
+            using SqlConnection dbConnection = new(_connectionString);
+            try
+            {
+                var dbCommand = new SqlCommand(query, dbConnection);
+                dbCommand.Parameters.Add("@gameId", SqlDbType.VarChar, 8).Value = gameId;
+
+                dbConnection.Open();
+
+                SqlDataReader reader = dbCommand.ExecuteReader();
+                var gameRound = new GameRound();
+
+                while (reader.Read())
+                {
+                    gameRound = new GameRound{
+                        Id = (int)reader["id"],
+                        Word = (string)reader["word"],
+                        RoundNr = (int)reader["round_nr"],
+                        RoundComplete = (byte)reader["round_complete"] == 1,
+                        GameId = (int)reader["game_id"],
+                    };
+                }
+
+                return gameRound;
+            }
+            catch (Exception e)
+            {
+                errorMsg = e.Message;
+                return null;
+            }
+        }
     }
 }

@@ -7,6 +7,7 @@ namespace webbAPI.Models
 {
     public class Game
     {
+        public int Id { get; set; }
         public string RoomName { get; set; } = string.Empty;
         public string JoinCode { get; set; } = string.Empty;
         public bool IsActive { get; set; } = false;

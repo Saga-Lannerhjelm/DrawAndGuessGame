@@ -10,11 +10,15 @@ namespace webbAPI.Hubs
     {   
         private readonly SharedDB _sharedDB;
         private readonly GameRepository _gameRepository;
+        private readonly GameRoundRepository _gameRoundRepository;
+        private readonly UserRepository _userRepository;
 
-        public DrawHub (SharedDB sharedDB, GameRepository gameRepository)
+        public DrawHub (SharedDB sharedDB, GameRepository gameRepository, GameRoundRepository gameRoundRepository, UserRepository userRepository)
         {
             _sharedDB = sharedDB;
             _gameRepository = gameRepository;
+            _gameRoundRepository = gameRoundRepository;
+            _userRepository = userRepository;
         }
         public async Task JoinGame (UserConnection userConn) 
         {
@@ -54,16 +58,16 @@ namespace webbAPI.Hubs
             // }
         }
 
-        public async Task StartRound(string gameRoom)
+        public async Task StartRound(string joinCode)
         {
             // Get users in game
-            var users = _sharedDB.Connection
-            .Where(g => g.Value.JoinCode == gameRoom).ToList();
-
-            int usersInGameNr = users.Count;
+            // var users = _sharedDB.Connection
+            // .Where(g => g.Value.JoinCode == joinCode).ToList();
 
             var allUsersInGame = _sharedDB.Connection.Values
-            .Where(g => g.JoinCode == gameRoom).ToList();
+            .Where(g => g.JoinCode == joinCode).ToList();
+
+            int usersInGameNr = allUsersInGame.Count;
 
             try
             {
@@ -71,35 +75,56 @@ namespace webbAPI.Hubs
                 {
                     // Current game
                     // Get game by join code
-                    var currentGame = _sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == gameRoom);
+                    string error = "";
+                    var currentGame = _gameRepository.GetGameByJoinCode(joinCode, out error);
 
-                    if (currentGame != null) 
+                    if (currentGame != null || string.IsNullOrEmpty(error))
                     {
-                        // Mark game as started
-                        //Update game to active
+                        // Update gamestate to active
+                        var affectedRows = _gameRepository.UpdateActiveState(currentGame.Id, true, out error);
+
+                        if (affectedRows == 0 || !string.IsNullOrEmpty(error))
+                        {
+                            throw new Exception(error);
+                        }
                         currentGame.IsActive = true;
 
-                        // Add new Round
-                        // currentGame.Rounds.Add(new GameRound{});
-
-                        // Add users to the round
-                        foreach (var user in allUsersInGame)
-                        {
-                            // currentGame.Rounds[^1].Users.Add(new User{UserDetails = user});
-                        }
-
                         // Get word
+                        string word = "default word";
                         try
                         {
-                            await GetWord(currentGame);  
+                            word = await GetWord();  
                         }
                         catch (Exception ex)
                         {
                             
                             Console.WriteLine($"An error occurred: {ex.Message}");
                         }
-                    
-                        // Select players to draw
+
+                        // Add a new round
+                        var newGameRound = new GameRound {
+                            GameId = currentGame.Id,
+                            Word = word,
+                        };
+                        
+                        var roundId = _gameRoundRepository.Insert(newGameRound, out error);
+
+                        if (roundId == 0 || !string.IsNullOrEmpty(error))
+                        {
+                            throw new Exception(error);
+                        }
+                        var usersInRoundList = new List<UserInRound>();
+
+                        foreach (var user in allUsersInGame)
+                        {
+                            usersInRoundList.Add(new UserInRound {
+                                UserId = user.Id,
+                                IsDrawing = false,
+                                GameRoundId = roundId,
+                            });
+                        }
+
+                        // Select users to draw
                         var rnd = new Random();
 
                         int randomNr1 = rnd.Next(usersInGameNr);
@@ -110,25 +135,40 @@ namespace webbAPI.Hubs
                             randomNr2 = rnd.Next(usersInGameNr);
                         }
 
-                        // var selectedUser1 = currentGame.Rounds[^1].Users[randomNr1];
-                        // var selectedUser2 = currentGame.Rounds[^1].Users[randomNr2];
+                        var drawingUserOne = allUsersInGame[randomNr1];
+                        var drawingUserTwo = allUsersInGame[randomNr2];
 
-                        // selectedUser1.IsDrawing = true;
-                        // selectedUser2.IsDrawing = true;
+                        usersInRoundList[randomNr1].IsDrawing = true;
+                        usersInRoundList[randomNr2].IsDrawing = true;
 
                         // Make sure that only the ones that hasn't drawn yet are selected
                         // Maybe filter out the ones that already have drawn
 
-                        await Clients.Group(gameRoom).SendAsync("GameCanStart", true);
-                        // await Clients.Group(gameRoom).SendAsync("GameStatus", $"{selectedUser1.UserDetails.Username} och {selectedUser2.UserDetails.Username} ritar!");
-                        // await UsersInRound(gameRoom);
+                        // Add users to the round
+                        foreach (var userInRound in usersInRoundList)
+                        {
+                            affectedRows = _userRepository.InsertUserInRound(userInRound, out error);
+
+                            if (affectedRows == 0 || !string.IsNullOrEmpty(error))
+                            {
+                                throw new Exception(error);
+                            }
+                        }
+                        await Clients.Group(joinCode).SendAsync("GameCanStart", true);
+                        await Clients.Group(joinCode).SendAsync("GameStatus", $"{drawingUserOne.Username} och {drawingUserTwo.Username} ritar!");
+                        await UsersInRound(roundId, currentGame.JoinCode);
                         // await GameInfo(gameRoom);
-                     
+                        // currentGame.Rounds[^1].Users.Add(new User{UserDetails = user});
+                        
                     }
-                    else 
-                    {
-                        await Clients.Group(gameRoom).SendAsync("GameCanStart", false);
+                    else {
+                         throw new Exception(error);
                     }
+                   
+                }
+                else 
+                {
+                    await Clients.Group(joinCode).SendAsync("GameCanStart", false);
                 }
             }
             catch (Exception ex)
@@ -138,20 +178,20 @@ namespace webbAPI.Hubs
             }
         }
 
-        public async Task GetWord (Game currentGame) 
+        public async Task<string> GetWord () 
         {
             // Link to API https://random-word-form.herokuapp.com
             HttpClient client = new();
             HttpResponseMessage response = await client.GetAsync("https://random-word-form.herokuapp.com/random/noun");
-            string word = "Default word";
 
             if (response.IsSuccessStatusCode)
             {
                 string apiResp = await response.Content.ReadAsStringAsync();
                 string[] words = JsonConvert.DeserializeObject<string[]>(apiResp) ?? [];
-                word = (words?.Length > 0) ? words[0] : "";
-            } 
-            // currentGame.Rounds[^1].Word = word;
+                return (words?.Length > 0) ? words[0] : "default word";
+            } else {
+                return "Default word";
+            }
         }
         public async Task Drawing(Point start, Point end, string color, string gameRoom) 
         {
@@ -211,22 +251,48 @@ namespace webbAPI.Hubs
             }
         }
 
-        // public Task UsersInRound (string gameRoom) 
-        // {
-        //     var currentGame = _sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == gameRoom);
-        //     var currentRound = currentGame?.Rounds[^1];
-        //     var users = currentGame?.Rounds[^1].Users.ToList();
+        public Task UsersInRound (int roundId, string joinCode) 
+        {
+            var users = _userRepository.GetUsersByRound(roundId, out string error);
 
-        //     return Clients.Group(gameRoom).SendAsync("UsersInGame", users);
-        // }
+            if (users == null || !string.IsNullOrEmpty(error))
+            {
+                Console.WriteLine("Errir: ", error);
+                return Clients.Group(joinCode).SendAsync("UsersInGame", null);  
+            }
+            return Clients.Group(joinCode).SendAsync("UsersInGame", users);  
+        }
 
-        // public Task GameInfo(string gameRoom) 
-        // {
-        //     var currentGame = _sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == gameRoom);
-        //     var currentRound = currentGame?.Rounds.Count > 0 ? currentGame?.Rounds[^1] : new GameRound(); 
+        public Task GameInfo(string joinCode) 
+        {
+            // var currentGame = _sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == gameRoom);
+            // var currentRound = currentGame?.Rounds.Count > 0 ? currentGame?.Rounds[^1] : new GameRound(); 
 
-        //     return Clients.Group(gameRoom).SendAsync("receiveGameInfo", currentGame, currentRound);
-        // }
+            string error = "";
+            var currentGame = new Game();
+            var currentRound = new GameRound();
+
+            try
+            {
+                currentGame = _gameRepository.GetGameByJoinCode(joinCode, out error);
+
+                if (currentGame != null && string.IsNullOrEmpty(error))
+                {
+                    currentRound = _gameRoundRepository.GetGameRoundByGameId(currentGame.Id, out error);
+
+                    if (currentRound == null && !string.IsNullOrEmpty(error))
+                    {
+                        throw new Exception(error);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error:", ex);
+            }
+            return Clients.Group(joinCode).SendAsync("receiveGameInfo", currentGame, currentRound);
+
+        }
 
         public async Task SendClearCanvas (string gameRoom) 
         {
