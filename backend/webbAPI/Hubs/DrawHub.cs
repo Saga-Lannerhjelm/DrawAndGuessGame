@@ -232,7 +232,7 @@ namespace webbAPI.Hubs
                             {
                                 await EndRound(currentRound, userConn.JoinCode);
                             }
-                            
+
                             await UsersInRound(currentRound.Id ,userConn.JoinCode);
                             await GameInfo(currentGame.JoinCode);
                             await Clients.Caller.SendAsync("ReceiveGuess", guess, userConn.Id);
@@ -423,9 +423,9 @@ namespace webbAPI.Hubs
                             UsersInRound(currentRound.Id, userConn.JoinCode);    
                         }
                     }
-                }
-                else {
-                    UsersInGame(userConn.JoinCode);    
+                    else {
+                        UsersInGame(userConn.JoinCode);    
+                    }
                 }
             }
             return base.OnDisconnectedAsync(exception);
