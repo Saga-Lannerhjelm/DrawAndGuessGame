@@ -37,27 +37,30 @@ namespace webbAPI.Repositories
             }
         }
 
-        // public int UpdateActiveState (Game game, out string errorMsg) 
-        // {
-        //     string query = "UPDATE games SET is_active = @isActive)";
-        //     errorMsg = "";
+        public int Update(GameRound round, out string errorMsg) 
+        {
+            string query = "UPDATE game_rounds SET word = @word, round_nr = @round_nr, round_complete = @roundComplete WHERE id = @id";
+            errorMsg = "";
 
-        //     using SqlConnection dbConnection = new(_connectionString);
-        //     try
-        //     {
-        //         var dbCommand = new SqlCommand(query, dbConnection);
-        //         dbCommand.Parameters.Add("@isActive", SqlDbType.TinyInt).Value = game.IsActive;
+            using SqlConnection dbConnection = new(_connectionString);
+            try
+            {
+                var dbCommand = new SqlCommand(query, dbConnection);
+                dbCommand.Parameters.Add("@word", SqlDbType.VarChar, 50).Value = round.Word;
+                dbCommand.Parameters.Add("@round_nr", SqlDbType.Int).Value = round.RoundNr;
+                dbCommand.Parameters.Add("@roundComplete", SqlDbType.TinyInt).Value = round.RoundComplete;
+                dbCommand.Parameters.Add("@id", SqlDbType.Int).Value = round.Id;
 
-        //         dbConnection.Open();
+                dbConnection.Open();
 
-        //         return dbCommand.ExecuteNonQuery();
-        //     }
-        //     catch (Exception e)
-        //     {
-        //         errorMsg = e.Message;
-        //         return 0;
-        //     }
-        // }
+                return dbCommand.ExecuteNonQuery();
+            }
+            catch (Exception e)
+            {
+                errorMsg = e.Message;
+                return 0;
+            }
+        }
 
 
         // public int DELETE (int id, out string errorMsg) 

@@ -7,7 +7,7 @@ namespace webbAPI.Models.ViewModels
 {
     public class UserVM
     {
-        public User User { get; set; } = new User();
-        public UserInRound UserInRound { get; set; } = new UserInRound();
+        public User Info { get; set; } = new User();
+        public UserInRound Round { get; set; } = new UserInRound();
     }
 }

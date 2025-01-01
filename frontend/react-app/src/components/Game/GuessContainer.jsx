@@ -22,8 +22,7 @@ const GuessContainer = ({ userIsDrawing, userGuesses }) => {
   useEffect(() => {
     if (users.length > 0 && users[0].username == undefined) {
       userIsDrawing(
-        users.find((user) => user.user.username == activeUser).userInRound
-          .isDrawing
+        users.find((user) => user.info.username == activeUser).round.isDrawing
       );
     }
   }, [users]);
@@ -33,31 +32,29 @@ const GuessContainer = ({ userIsDrawing, userGuesses }) => {
       Spelare ({users.length})
       {users.map((user, index) => (
         <div className="message-and-user" key={index}>
-          {userGuesses.find((g) => g.userId === user.user.id) ? (
+          {userGuesses.find((g) => g.userId === user.info.id) ? (
             <Message
-              message={userGuesses.find((g) => g.userId === user.user.id).guess}
-              correct={user.userInRound.guessedCorrectly}
+              message={userGuesses.find((g) => g.userId === user.info.id).guess}
+              correct={user.round.guessedCorrectly}
             />
           ) : (
             <div></div>
           )}
           {user.username == undefined ? (
             <div
-              className={user.userInRound.isDrawing ? "user drawing" : "user"}
+              className={user.round.isDrawing ? "user drawing" : "user"}
               style={
-                user.userInRound.guessedCorrectly
-                  ? { borderColor: "#00FF2F" }
-                  : {}
+                user.round.guessedCorrectly ? { borderColor: "#00FF2F" } : {}
               }
             >
               <div>
                 <p>
-                  {user.user.username}{" "}
-                  {user.user.username == activeUser ? "(Du)" : ""}
+                  {user.info.username}{" "}
+                  {user.info.username == activeUser ? "(Du)" : ""}
                 </p>
-                <p>{user.userInRound.points} poäng</p>
+                <p>{user.round.points} poäng</p>
               </div>
-              {user.userInRound.isDrawing && <span>ritar</span>}
+              {user.round.isDrawing && <span>ritar</span>}
             </div>
           ) : (
             <div

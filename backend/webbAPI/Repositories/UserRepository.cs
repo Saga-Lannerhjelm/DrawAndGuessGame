@@ -94,6 +94,33 @@ namespace webbAPI.Repositories
             }
         }
 
+        public int AddPoints(UserVM roundData, out string errorMsg) 
+        {
+            string query = "EXEC add_points @userId, @totalPoints, @wins, @userInRoundId, @isDrawing, @points";
+            errorMsg = "";
+
+            using SqlConnection dbConnection = new(_connectionString);
+            try
+            {
+                var dbCommand = new SqlCommand(query, dbConnection);
+                dbCommand.Parameters.Add("userId", SqlDbType.Int).Value = roundData.Info.Id;
+                dbCommand.Parameters.Add("totalPoints", SqlDbType.Int).Value = roundData.Info.TotalPoints;
+                dbCommand.Parameters.Add("wins", SqlDbType.Int).Value = roundData.Info.Wins;
+                dbCommand.Parameters.Add("userInRoundId", SqlDbType.TinyInt).Value = roundData.Round.Id;
+                dbCommand.Parameters.Add("isDrawing", SqlDbType.TinyInt).Value = roundData.Round.IsDrawing;
+                dbCommand.Parameters.Add("@points", SqlDbType.Int).Value = roundData.Round.Points;
+
+                dbConnection.Open();
+
+                return dbCommand.ExecuteNonQuery();
+            }
+            catch (Exception e)
+            {
+                errorMsg = e.Message;
+                return 0;
+            }
+        }
+
         public int DeleteUserInRound (int id, out string errorMsg) 
         {
             string query = "DELETE FROM user_in_round WHERE id = @id";
@@ -143,7 +170,7 @@ namespace webbAPI.Repositories
                 {
                     users.Add(
                         new UserVM{
-                            UserInRound = new UserInRound{
+                            Round = new UserInRound{
                                 Id = (int)reader["userInRoundId"],
                                 IsDrawing = (byte)reader["is_drawing"] == 1,
                                 Points = (int)reader["points"],
@@ -152,7 +179,7 @@ namespace webbAPI.Repositories
                                 UserId = (int)reader["user_id"],
                                 GameRoundId = (int)reader["game_round_id"],
                             },
-                            User = new User{
+                            Info = new User{
                                 Id = (int)reader["userId"],
                                 Username = reader["username"].ToString() ?? "",
                                 TotalPoints = (int)reader["total_points"],

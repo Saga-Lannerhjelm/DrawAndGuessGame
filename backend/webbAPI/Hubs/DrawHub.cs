@@ -205,33 +205,34 @@ namespace webbAPI.Hubs
 
                             var users = _userRepository.GetUsersByRound(currentRound.Id, out error);
 
-                            var guessingUser = users?.Find(u => u.User.Username == userConn.Username) ?? new UserVM();
+                            var guessingUser = users?.Find(u => u.Info.Username == userConn.Username) ?? new UserVM();
 
                             if (users == null || !string.IsNullOrEmpty(error))
                             {
                                 throw new Exception(error);
                             }
 
-                            if (!users.Where(user => user.UserInRound.GuessedCorrectly).Any())
+                            if (!users.Where(user => user.Round.GuessedCorrectly).Any())
                             {
-                                guessingUser.UserInRound.GuessedFirst = true;
+                                guessingUser.Round.GuessedFirst = true;
                             }
 
-                            guessingUser.UserInRound.GuessedCorrectly = true;
+                            guessingUser.Round.GuessedCorrectly = true;
 
-                            if (!users.Where(user => !user.UserInRound.IsDrawing && !user.UserInRound.GuessedCorrectly).Any())
-                            {
-                                // await EndRound(currentRound, userConn.GameRoom);
-                            }
 
                             // Update user
-                            var effectedRows = _userRepository.UpdateUserInRound(guessingUser.UserInRound, out error);
+                            var effectedRows = _userRepository.UpdateUserInRound(guessingUser.Round, out error);
 
                             if (effectedRows == 0 && string.IsNullOrEmpty(error))
                             {
                                 throw new Exception(error);
                             }
 
+                            if (!users.Where(user => !user.Round.IsDrawing && !user.Round.GuessedCorrectly).Any())
+                            {
+                                await EndRound(currentRound, userConn.JoinCode);
+                            }
+                            
                             await UsersInRound(currentRound.Id ,userConn.JoinCode);
                             await GameInfo(currentGame.JoinCode);
                             await Clients.Caller.SendAsync("ReceiveGuess", guess, userConn.Id);
@@ -310,29 +311,70 @@ namespace webbAPI.Hubs
             await Clients.Group(gameRoom).SendAsync("clearCanvas");
         }
 
-        // public Task EndRound (GameRound round, string gameRoom) 
-        // {
-        //     round.RoundComplete = true;
+        public Task EndRound (GameRound round, string roomCode) 
+        {
+            round.RoundComplete = true;
 
-        //     var winner = round.Users.Find(user => user.GuessedFirst);
-        //     if (winner != null) winner.Points = 5;
+            try
+            {
+                var users = _userRepository.GetUsersByRound(round.Id, out string error);
 
-        //     var usersGuessedCorrectly = round.Users.FindAll(user => !user.GuessedFirst && !user.IsDrawing && user.HasGuessedCorrectly);
+                if (users == null || !string.IsNullOrEmpty(error))
+                {
+                    throw new Exception(error);
+                }
+
+                var winner = users?.Find(user => user.Round.GuessedFirst);
+                if (winner != null)
+                {
+                    AddPoints(winner, 5);
+                }
+
+                var usersGuessedCorrectly = users?.FindAll(user => !user.Round.GuessedFirst && !user.Round.IsDrawing && user.Round.GuessedCorrectly);
+                
+                if (usersGuessedCorrectly != null)
+                {
+                    foreach (var user in usersGuessedCorrectly)
+                    {
+                        AddPoints(user, 3);
+                    }
+                }
+
+                var artists = users?.FindAll(user => user.Round.IsDrawing) ?? new List<UserVM>();
+
+                foreach (var user in artists)
+                {
+                    AddPoints(user, 4);
+                }
+
+                var affectedRows = _gameRoundRepository.Update(round, out error);
+
+                if (affectedRows == 0 || !string.IsNullOrEmpty(error))
+                {
+                    throw new Exception(error);
+                }
+                
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
             
-        //     foreach (var user in usersGuessedCorrectly)
-        //     {
-        //         user.Points = 3;
-        //     }
+            return Clients.Group(roomCode).SendAsync("RoundEnded");
+        }
 
-        //     var artists = round.Users.FindAll(user => user.IsDrawing);
+        private void AddPoints(UserVM user, int points)
+        {
+            user.Round.Points = points;
+            user.Info.TotalPoints += points;
 
-        //     foreach (var user in artists)
-        //     {
-        //         user.Points = 4;
-        //     }
-        //     return Clients.Group(gameRoom).SendAsync("RoundEnded");
-        // }
-        
+            var affectedRows = _userRepository.AddPoints(user, out string error);
+            if (affectedRows == 0 || !string.IsNullOrEmpty(error))
+            {
+                throw new Exception(error);
+            }
+        }
+
         // public async Task EndGame () 
         // {
         //     if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? userConn))
@@ -370,7 +412,7 @@ namespace webbAPI.Hubs
                                 Console.WriteLine("Error: ", error);
                             }
 
-                            var disconnectedUser = users?.Find(u => u.User.Id == userConn.Id)?.UserInRound ?? new UserInRound();
+                            var disconnectedUser = users?.Find(u => u.Info.Id == userConn.Id)?.Round ?? new UserInRound();
                             var affectedRows = _userRepository.DeleteUserInRound(disconnectedUser.Id, out error);
 
                             if (!string.IsNullOrEmpty(error))
