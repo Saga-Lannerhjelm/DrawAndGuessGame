@@ -5,19 +5,7 @@ import { useParams } from "react-router-dom";
 import Message from "./Message";
 
 const GuessContainer = ({ userIsDrawing, userGuesses }) => {
-  const { connection, activeUser } = useConnection();
-  const [users, setUsers] = useState([]);
-  // const [activeUser, setActiveUser] = useState("");
-
-  useEffect(() => {
-    if (connection) {
-      connection.on("UsersInGame", (userValues) => {
-        setUsers(userValues);
-        console.log("Users:", userValues);
-        console.log("AcriveUser:", activeUser);
-      });
-    }
-  }, [connection]);
+  const { users, activeUser } = useConnection();
 
   useEffect(() => {
     if (users.length > 0 && users[0].username == undefined) {

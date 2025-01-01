@@ -11,7 +11,8 @@ const Home = () => {
   const [gameStatusSuccess, setGameStatusSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const { setConnection, connection, setActiveUser } = useConnection();
+  const { setConnection, connection, setActiveUser, setUsers } =
+    useConnection();
 
   const navigate = useNavigate();
 
@@ -131,6 +132,10 @@ const Home = () => {
           setConnection(newConnection);
           navigate(`/game/${gameRoomCode}`);
         }
+      });
+
+      newConnection.on("usersInGame", (userValues) => {
+        setUsers(userValues);
       });
 
       newConnection.onclose(() => {
