@@ -40,7 +40,7 @@ const GuessContainer = ({ userIsDrawing, userGuesses }) => {
                   {user.info.username}{" "}
                   {user.info.username == activeUser ? "(Du)" : ""}
                 </p>
-                <p>{user.round.points} poäng</p>
+                <p>{user.totalRoundPoints} poäng</p>
               </div>
               {user.round.isDrawing && <span>ritar</span>}
             </div>

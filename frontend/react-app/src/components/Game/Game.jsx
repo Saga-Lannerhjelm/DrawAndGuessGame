@@ -18,7 +18,8 @@ const Game = () => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [gameActive, setGameActive] = useState(false);
   const [round, setRound] = useState(0);
-  const [roundStarted, setRoundStarted] = useState(false);
+  const [showResult, setShowResult] = useState(false);
+  // const [roundStarted, setRoundStarted] = useState(false);
   const [roundComplete, setRoundComplete] = useState(false);
   const [word, setWord] = useState("");
   const [time, setTime] = useState(30);
@@ -62,7 +63,10 @@ const Game = () => {
         if (round.id != 0) {
           setRound(round.roundNr);
           setWord(round.word);
-          setRoundComplete(round.roundComplete);
+
+          setTimeout(() => {
+            setRoundComplete(round.roundComplete);
+          }, 1000);
         }
         console.log(game, round);
       });
@@ -72,7 +76,11 @@ const Game = () => {
       });
 
       connection.on("RoundEnded", (time) => {
-        setRoundStarted(false);
+        // setRoundStarted(false);
+      });
+
+      connection.on("GameFinished", () => {
+        setShowResult(true);
       });
 
       connection.on("leaveGame", () => {
@@ -109,7 +117,7 @@ const Game = () => {
   const startRound = async () => {
     if (connection) {
       setTime(30);
-      setRoundStarted(true);
+      // setRoundStarted(true);
       setRoundComplete(false);
       await connection.invoke("StartRound", joinCode);
       // await connection.invoke("SendTimerData", time);
@@ -139,7 +147,11 @@ const Game = () => {
       <div className="game-container">
         <div>
           {roundComplete ? (
-            <ResultCard startNewRound={startRound} />
+            showResult ? (
+              <ResultCard gameResult={true} />
+            ) : (
+              <ResultCard startNewRound={startRound} gameResult={false} />
+            )
           ) : gameActive ? (
             <>
               <TopSection time={time} round={round} />
@@ -160,7 +172,6 @@ const Game = () => {
           )}
         </div>
         <GuessContainer
-          // gameRoom={gameRoom}
           userIsDrawing={(bool) => setIsDrawing(bool)}
           userGuesses={userGuesses}
         />

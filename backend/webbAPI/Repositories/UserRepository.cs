@@ -152,7 +152,7 @@ namespace webbAPI.Repositories
 
         public List<UserVM>? GetUsersByRound (int roundId, out string errorMsg) 
         {
-            string query = "SELECT user_in_round.id AS userInRoundId, user_in_round.*, users.id AS userId, users.* FROM user_in_round INNER JOIN users ON users.id = user_id WHERE game_round_id = @roundId";
+            string query = "SELECT * FROM all_users_in_round WHERE game_round_id = @roundId ORDER BY userId;";
             errorMsg = "";
 
             using SqlConnection dbConnection = new(_connectionString);
@@ -185,7 +185,8 @@ namespace webbAPI.Repositories
                                 TotalPoints = (int)reader["total_points"],
                                 Wins = (int)reader["wins"],
                                 ActiveGameId = reader["active_game_id"] != DBNull.Value ? (int)reader["active_game_id"] : (int?)null,
-                            }
+                            },
+                            TotalRoundPoints = (int)reader["totalPointsFromGame"]
                         }
                     );
                 }

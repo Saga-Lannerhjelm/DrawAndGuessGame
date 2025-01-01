@@ -136,6 +136,7 @@ const Home = () => {
 
       newConnection.on("usersInGame", (userValues) => {
         setUsers(userValues);
+        console.log("Users:", userValues);
       });
 
       newConnection.onclose(() => {

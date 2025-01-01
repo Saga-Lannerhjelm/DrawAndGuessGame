@@ -62,14 +62,17 @@ namespace webbAPI.Hubs
 
                     if (currentGame != null || string.IsNullOrEmpty(error))
                     {
-                        // Update gamestate to active
-                        var affectedRows = _gameRepository.UpdateActiveState(currentGame.Id, true, out error);
-
-                        if (affectedRows == 0 || !string.IsNullOrEmpty(error))
+                        if (!currentGame.IsActive)
                         {
-                            throw new Exception(error);
+                            // Update gamestate to active
+                            var affectedRows = _gameRepository.UpdateActiveState(currentGame.Id, true, out error);
+
+                            if (affectedRows == 0 || !string.IsNullOrEmpty(error))
+                            {
+                                throw new Exception(error);
+                            }
+                            currentGame.IsActive = true;
                         }
-                        currentGame.IsActive = true;
 
                         // Get word
                         string word = "default word";
@@ -129,7 +132,7 @@ namespace webbAPI.Hubs
                         // Add users to the round
                         foreach (var userInRound in usersInRoundList)
                         {
-                            affectedRows = _userRepository.InsertUserInRound(userInRound, out error);
+                            var affectedRows = _userRepository.InsertUserInRound(userInRound, out error);
 
                             if (affectedRows == 0 || !string.IsNullOrEmpty(error))
                             {
@@ -354,9 +357,9 @@ namespace webbAPI.Hubs
                     throw new Exception(error);
                 }
 
-                if (round.RoundNr == 3)
+                if (round.RoundNr >= 3)
                 {
-                    // Do something
+                    return Clients.Group(roomCode).SendAsync("GameFinished");
                 }
                 
             }
