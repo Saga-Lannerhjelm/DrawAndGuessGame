@@ -353,6 +353,11 @@ namespace webbAPI.Hubs
                 {
                     throw new Exception(error);
                 }
+
+                if (round.RoundNr == 3)
+                {
+                    // Do something
+                }
                 
             }
             catch (Exception ex)
@@ -375,17 +380,25 @@ namespace webbAPI.Hubs
             }
         }
 
-        // public async Task EndGame () 
-        // {
-        //     if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? userConn))
-        //     {
-        //         var game = _sharedDB.CreatedGames.FirstOrDefault(exGame => exGame.JoinCode == userConn.JoinCode);
-        //         if (_sharedDB.CreatedGames.TryTake(out game))
-        //         {
-        //             await Clients.Group(userConn.JoinCode).SendAsync("leaveGame");
-        //         } 
-        //     }
-        // }
+        public async Task EndGame() 
+        {
+            if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? userConn))
+            {
+                var currentGame = _gameRepository.GetGameByJoinCode(userConn.JoinCode, out string error);
+
+                if (currentGame != null && string.IsNullOrEmpty(error))
+                {
+                    currentGame.IsActive = false;
+                    var affectedRows = _gameRepository.UpdateActiveState(currentGame.Id, currentGame.IsActive, out error);
+
+                    if (affectedRows != 0 || string.IsNullOrEmpty(error))
+                    {
+                        await GameInfo(currentGame.JoinCode);
+                    }
+                }
+                await Clients.Group(userConn.JoinCode).SendAsync("leaveGame");
+            }
+        }
 
         public override Task OnDisconnectedAsync(Exception? exception)
         {
