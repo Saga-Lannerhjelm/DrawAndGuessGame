@@ -1,6 +1,7 @@
 using webbAPI.DataService;
 using webbAPI.Hubs;
 using webbAPI.Repositories;
+using webbAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,9 +15,11 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<SharedDB>();
 
-builder.Services.AddScoped<GameRepository>();
-builder.Services.AddScoped<GameRoundRepository>();
+builder.Services.AddSingleton<GameRepository>();
+builder.Services.AddSingleton<GameRoundRepository>();
 builder.Services.AddScoped<UserRepository>();
+
+builder.Services.AddHostedService<GameBackgroundService>();
 
 builder.Services.AddCors(opt => {
     opt.AddPolicy("react-app", builder => {

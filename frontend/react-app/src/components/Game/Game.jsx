@@ -17,8 +17,8 @@ const Game = () => {
   const [joinCode, setJoinCode] = useState("");
   const [isDrawing, setIsDrawing] = useState(false);
   const [gameActive, setGameActive] = useState(false);
-  const [round, setRound] = useState(0);
-  const [showResult, setShowResult] = useState(false);
+  const [round, setRound] = useState(undefined);
+  const [showFinalResult, setShowFinalResult] = useState(false);
   // const [roundStarted, setRoundStarted] = useState(false);
   const [roundComplete, setRoundComplete] = useState(false);
   const [word, setWord] = useState("");
@@ -58,21 +58,25 @@ const Game = () => {
       });
 
       connection.on("receiveGameInfo", (game, round) => {
+        console.log("receive info");
         setRoomName(game.roomName);
         setGameActive(game.isActive);
-        if (round.id != 0) {
-          setRound(round.roundNr);
+        console.log("active", game.isActive);
+
+        if (game.isActive && round.id != 0) {
+          setRound(round);
           setWord(round.word);
 
           setTimeout(() => {
             setRoundComplete(round.roundComplete);
           }, 1000);
         }
-        console.log(game, round);
       });
 
       connection.on("ReceiveTimerData", (time) => {
+        time = time.length > 1 ? "0" + time : time;
         setTime(time);
+        // console.log(time);
       });
 
       connection.on("RoundEnded", (time) => {
@@ -80,7 +84,13 @@ const Game = () => {
       });
 
       connection.on("GameFinished", () => {
-        setShowResult(true);
+        setShowFinalResult(true);
+      });
+
+      connection.on("EndRound", (joinCode) => {
+        console.log("in ended round");
+        // setRoundStarted(false);
+        connection.invoke("EndRound", joinCode);
       });
 
       connection.on("leaveGame", () => {
@@ -90,7 +100,6 @@ const Game = () => {
   }, [connection]);
 
   const displayMessage = (userId) => {
-    console.log("in display");
     if (timeOutRef.current) {
       clearTimeout(timeOutRef.current);
     }
@@ -109,7 +118,6 @@ const Game = () => {
   };
 
   const leaveRoom = async () => {
-    console.log("leave");
     await connection.stop();
     navigate("/home");
   };
@@ -147,14 +155,14 @@ const Game = () => {
       <div className="game-container">
         <div>
           {roundComplete ? (
-            showResult ? (
+            showFinalResult ? (
               <ResultCard gameResult={true} />
             ) : (
               <ResultCard startNewRound={startRound} gameResult={false} />
             )
           ) : gameActive ? (
             <>
-              <TopSection time={time} round={round} />
+              <TopSection time={time} round={round.roundNr} />
               <div id="canvas-container">
                 <DrawingBoard
                   gameRoom={joinCode}
@@ -174,6 +182,7 @@ const Game = () => {
         <GuessContainer
           userIsDrawing={(bool) => setIsDrawing(bool)}
           userGuesses={userGuesses}
+          isActive={gameActive}
         />
       </div>
     </>

@@ -39,7 +39,7 @@ namespace webbAPI.Repositories
 
         public int Update(GameRound round, out string errorMsg) 
         {
-            string query = "UPDATE game_rounds SET word = @word, round_nr = @round_nr, round_complete = @roundComplete WHERE id = @id";
+            string query = "UPDATE game_rounds SET word = @word, round_nr = @round_nr, time = @time, round_complete = @roundComplete WHERE id = @id";
             errorMsg = "";
 
             using SqlConnection dbConnection = new(_connectionString);
@@ -48,6 +48,7 @@ namespace webbAPI.Repositories
                 var dbCommand = new SqlCommand(query, dbConnection);
                 dbCommand.Parameters.Add("@word", SqlDbType.VarChar, 50).Value = round.Word;
                 dbCommand.Parameters.Add("@round_nr", SqlDbType.Int).Value = round.RoundNr;
+                dbCommand.Parameters.Add("@time", SqlDbType.Int).Value = round.Time;
                 dbCommand.Parameters.Add("@roundComplete", SqlDbType.TinyInt).Value = round.RoundComplete;
                 dbCommand.Parameters.Add("@id", SqlDbType.Int).Value = round.Id;
 
@@ -87,7 +88,7 @@ namespace webbAPI.Repositories
 
         public GameRound? GetGameRoundByGameId (int gameId, out string errorMsg) 
         {
-            string query = "SELECT * FROM game_rounds WHERE game_id = @gameId";
+            string query = "SELECT TOP 1 id, word, round_nr, time, round_complete, game_id FROM game_rounds WHERE game_id = @gameId ORDER BY round_nr DESC";
             errorMsg = "";
 
             using SqlConnection dbConnection = new(_connectionString);
@@ -107,6 +108,7 @@ namespace webbAPI.Repositories
                         Id = (int)reader["id"],
                         Word = (string)reader["word"],
                         RoundNr = (int)reader["round_nr"],
+                        Time = (int)reader["time"],
                         RoundComplete = (byte)reader["round_complete"] == 1,
                         GameId = (int)reader["game_id"],
                     };

@@ -106,7 +106,7 @@ namespace webbAPI.Repositories
                 dbCommand.Parameters.Add("userId", SqlDbType.Int).Value = roundData.Info.Id;
                 dbCommand.Parameters.Add("totalPoints", SqlDbType.Int).Value = roundData.Info.TotalPoints;
                 dbCommand.Parameters.Add("wins", SqlDbType.Int).Value = roundData.Info.Wins;
-                dbCommand.Parameters.Add("userInRoundId", SqlDbType.TinyInt).Value = roundData.Round.Id;
+                dbCommand.Parameters.Add("userInRoundId", SqlDbType.Int).Value = roundData.Round.Id;
                 dbCommand.Parameters.Add("isDrawing", SqlDbType.TinyInt).Value = roundData.Round.IsDrawing;
                 dbCommand.Parameters.Add("@points", SqlDbType.Int).Value = roundData.Round.Points;
 

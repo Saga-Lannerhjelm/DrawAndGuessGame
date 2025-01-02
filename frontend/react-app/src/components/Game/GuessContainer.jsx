@@ -4,16 +4,18 @@ import { useConnection } from "../../context/ConnectionContext";
 import { useParams } from "react-router-dom";
 import Message from "./Message";
 
-const GuessContainer = ({ userIsDrawing, userGuesses }) => {
-  const { users, activeUser } = useConnection();
+const GuessContainer = ({ userIsDrawing, userGuesses, isActive }) => {
+  const { users, activeUserId } = useConnection();
 
   useEffect(() => {
-    if (users.length > 0 && users[0].username == undefined) {
+    console.log(users.length > 0 && users[0].username == undefined && isActive);
+    if (users.length > 0 && users[0].username == undefined && isActive) {
+      console.log("active", activeUserId);
       userIsDrawing(
-        users.find((user) => user.info.username == activeUser).round.isDrawing
+        users.find((user) => user.info.id == activeUserId).round.isDrawing
       );
     }
-  }, [users]);
+  }, [users, isActive]);
 
   return (
     <div className="user-container">
@@ -38,7 +40,7 @@ const GuessContainer = ({ userIsDrawing, userGuesses }) => {
               <div>
                 <p>
                   {user.info.username}{" "}
-                  {user.info.username == activeUser ? "(Du)" : ""}
+                  {user.info.id == activeUserId ? "(Du)" : ""}
                 </p>
                 <p>{user.totalRoundPoints} poäng</p>
               </div>
@@ -51,7 +53,7 @@ const GuessContainer = ({ userIsDrawing, userGuesses }) => {
             >
               <div>
                 <p>
-                  {user.username} {user.username == activeUser ? "(Du)" : ""}
+                  {user.username} {user.id == activeUserId ? "(Du)" : ""}
                 </p>
                 <p></p>
               </div>

@@ -11,7 +11,7 @@ const Home = () => {
   const [gameStatusSuccess, setGameStatusSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const { setConnection, connection, setActiveUser, setUsers } =
+  const { setConnection, connection, setActiveUserId, setUsers } =
     useConnection();
 
   const navigate = useNavigate();
@@ -110,7 +110,7 @@ const Home = () => {
     console.log("USerID in join:", userId);
     if (!loading) {
       startConnection(randomUsername, gameRoomCode, userId);
-      setActiveUser(randomUsername);
+      setActiveUserId(userId);
     }
   };
 

@@ -118,5 +118,40 @@ namespace webbAPI.Repositories
                 return null;
             }
         }
+
+         public List<Game>? GetActiveGames (out string errorMsg) 
+        {
+            string query = "SELECT * FROM games WHERE is_active = 1";
+            errorMsg = "";
+
+            using SqlConnection dbConnection = new(_connectionString);
+            try
+            {
+                var dbCommand = new SqlCommand(query, dbConnection);
+
+                dbConnection.Open();
+
+                SqlDataReader reader = dbCommand.ExecuteReader();
+                var games = new List<Game>();
+
+                while (reader.Read())
+                {
+                    games.Add(new Game{
+                        Id = reader.GetInt32("id"),
+                        RoomName = reader.GetString("name"),
+                        JoinCode = reader.GetString("join_code"),
+                        IsActive = reader.GetByte("is_active") == 1,
+                        CreatorId = reader.GetInt32("creator_id")
+                    });
+                }
+
+                return games;
+            }
+            catch (Exception e)
+            {
+                errorMsg = e.Message;
+                return null;
+            }
+        }
     }
 }

@@ -2,7 +2,7 @@ import React from "react";
 import { useConnection } from "../../context/ConnectionContext";
 
 const ResultCard = ({ startNewRound, gameResult }) => {
-  const { users, activeUser } = useConnection();
+  const { users, activeUserId } = useConnection();
   return (
     <div>
       ResultCard

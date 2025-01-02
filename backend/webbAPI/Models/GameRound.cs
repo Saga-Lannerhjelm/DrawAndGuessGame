@@ -10,6 +10,7 @@ namespace webbAPI.Models
         public int Id { get; set; }
         public string Word { get; set; } = "a word";
         public int RoundNr { get; set; } = 0;
+        public int Time { get; set; } = 30;
         public bool RoundComplete { get; set; } = false;
         public int GameId { get; set; }
         // public List<User> Users { get; set; } = [];

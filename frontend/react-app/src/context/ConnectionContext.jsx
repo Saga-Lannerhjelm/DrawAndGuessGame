@@ -4,15 +4,15 @@ const ConnectionContext = createContext();
 
 export const ConnectionProvider = ({ children }) => {
   const [connection, setConnection] = useState(undefined);
-  const [activeUser, setActiveUser] = useState("");
+  const [activeUserId, setActiveUserId] = useState("");
   const [users, setUsers] = useState([]);
   return (
     <ConnectionContext.Provider
       value={{
         connection,
         setConnection,
-        activeUser,
-        setActiveUser,
+        activeUserId,
+        setActiveUserId,
         users,
         setUsers,
       }}
