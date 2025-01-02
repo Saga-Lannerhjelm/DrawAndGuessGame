@@ -85,6 +85,7 @@ const Game = () => {
 
       connection.on("GameFinished", () => {
         setShowFinalResult(true);
+        setRound();
       });
 
       connection.on("EndRound", (joinCode) => {
@@ -156,9 +157,13 @@ const Game = () => {
         <div>
           {roundComplete ? (
             showFinalResult ? (
-              <ResultCard gameResult={true} />
+              <ResultCard showGameResult={true} />
             ) : (
-              <ResultCard startNewRound={startRound} gameResult={false} />
+              <ResultCard
+                startNewRound={startRound}
+                showGameResult={false}
+                roundData={round}
+              />
             )
           ) : gameActive ? (
             <>
