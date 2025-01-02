@@ -61,9 +61,9 @@ const Game = () => {
         console.log("receive info");
         setRoomName(game.roomName);
         setGameActive(game.isActive);
-        console.log("active", game.isActive);
 
-        if (game.isActive && round.id != 0) {
+        if (round.id != 0) {
+          console.log("round", game.isActive, round);
           setRound(round);
           setWord(round.word);
 
@@ -79,13 +79,13 @@ const Game = () => {
         // console.log(time);
       });
 
-      connection.on("RoundEnded", (time) => {
-        // setRoundStarted(false);
-      });
+      // connection.on("RoundEnded", (time) => {
+      //   // setRoundStarted(false);
+      // });
 
       connection.on("GameFinished", () => {
         setShowFinalResult(true);
-        setRound();
+        // setRound();
       });
 
       connection.on("EndRound", (joinCode) => {
@@ -157,7 +157,7 @@ const Game = () => {
         <div>
           {roundComplete ? (
             showFinalResult ? (
-              <ResultCard showGameResult={true} />
+              <ResultCard showGameResult={true} endGame={endGame} />
             ) : (
               <ResultCard
                 startNewRound={startRound}
@@ -167,7 +167,7 @@ const Game = () => {
             )
           ) : gameActive ? (
             <>
-              <TopSection time={time} round={round.roundNr} />
+              <TopSection time={time} round={round} />
               <div id="canvas-container">
                 <DrawingBoard
                   gameRoom={joinCode}
