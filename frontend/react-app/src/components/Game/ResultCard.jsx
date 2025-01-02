@@ -13,12 +13,21 @@ const ResultCard = ({ startNewRound, showGameResult, roundData, endGame }) => {
     <div className="result-box">
       <h2>Resultat {roundData && "För runda " + roundData.roundNr}</h2>
       {users.map((user, index) => (
-        <p key={index}>
-          {user.info.username} {activeUserId === user.info.id ? "(Du)" : ""}
-          {user.info.totalPoints} (+{user.round.points}{" "}
-          {user.round.isDrawing ? "ritare" : ""})
-          {showGameResult && index === 0 ? "vinnare" : ""}
-        </p>
+        <div key={index} className="result-user">
+          <p>
+            {" "}
+            {user.info.username}
+            {user.round.isDrawing
+              ? activeUserId === user.info.id
+                ? "(Du - ritare)"
+                : "(ritare)"
+              : ""}
+            {showGameResult && index === 0 ? "(vinnare)" : ""}
+          </p>
+          <p>
+            {user.info.totalPoints} (+{user.round.points} )
+          </p>
+        </div>
       ))}
       {!showGameResult ? (
         <button onClick={startNewRound} className="btn">
