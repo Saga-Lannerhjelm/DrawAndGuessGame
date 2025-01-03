@@ -5,11 +5,12 @@ import DrawingInfo from "./DrawingInfo";
 
 const DrawingBoard = ({ gameRoom, isDrawing, gameActive, word }) => {
   const [color, setColor] = useState("#ffffff");
+  const [amountDrawn, setAmountDrawn] = useState(0);
 
   const [loading, setLoading] = useState(true);
   const canvasRef = useRef(null);
 
-  const { connection } = useConnection();
+  const { connection, activeUserId } = useConnection();
 
   useEffect(() => {
     if (connection) {
@@ -78,32 +79,49 @@ const DrawingBoard = ({ gameRoom, isDrawing, gameActive, word }) => {
           prevPoint = { x: x, y: y };
         }
 
-        canvas.addEventListener("mousedown", () => (penDown = true));
-        canvas.addEventListener("mousemove", (e) => draw(e.pageX, e.pageY));
-        canvas.addEventListener("mouseup", () => (penDown = false));
+        const mouseDownHandler = () => (penDown = true);
+        const mouseMoveHandler = (e) => draw(e.pageX, e.pageY);
+        const mouseUpHandler = () => (penDown = false);
+
+        canvas.addEventListener("mousedown", mouseDownHandler);
+        canvas.addEventListener("mousemove", mouseMoveHandler);
+        canvas.addEventListener("mouseup", mouseUpHandler);
+
         return () => {
-          canvas.addEventListener("mousedown", () => (penDown = true));
-          canvas.addEventListener("mousemove", (e) => draw(e.pageX, e.pageY));
-          canvas.addEventListener("mouseup", () => (penDown = false));
+          canvas.removeEventListener("mousedown", mouseDownHandler);
+          canvas.removeEventListener("mousemove", mouseMoveHandler);
+          canvas.removeEventListener("mouseup", mouseUpHandler);
         };
       }
     }
   }, [connection, gameActive, loading, isDrawing]);
 
+  useEffect(() => {
+    console.log(active, amountDrawn);
+  }, [amountDrawn]);
+
   function drawStroke(start, end, color) {
-    if (!isDrawing) {
-      color = "black";
-    }
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 4;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.beginPath();
-    ctx.moveTo(start.x, start.y);
-    ctx.lineTo(end.x, end.y);
-    ctx.stroke();
+
+    if (canvas) {
+      if (!isDrawing) {
+        color = "black";
+      }
+
+      if (isDrawing) {
+        setAmountDrawn((prev) => prev + 1);
+      }
+
+      const ctx = canvas.getContext("2d");
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 4;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
+      ctx.stroke();
+    }
   }
 
   const sendClearCanvas = async () => {
@@ -120,7 +138,9 @@ const DrawingBoard = ({ gameRoom, isDrawing, gameActive, word }) => {
   return (
     <>
       <div>
-        {gameActive && <canvas ref={canvasRef} className="canvas"></canvas>}
+        {/* {gameActive &&  */}
+        <canvas ref={canvasRef} className="canvas"></canvas>
+        {/* } */}
         {isDrawing && <DrawingInfo clearCanvas={sendClearCanvas} word={word} />}
       </div>
     </>
