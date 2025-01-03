@@ -24,9 +24,9 @@ namespace webbAPI.Hubs
         public async Task JoinGame (UserConnection userConn) 
         {
             // If game exist
-            var existingGame = _gameRepository.GetGameByJoinCode(userConn.JoinCode, out string error);
+            var existingGame = _gameRepository.GetGameByJoinCode(userConn.JoinCode, out string error) ?? new Game();
 
-            if (existingGame != null || string.IsNullOrEmpty(error))
+            if (existingGame?.Id != 0 && string.IsNullOrEmpty(error) && !existingGame.IsActive)
             {
                 await Groups.AddToGroupAsync(Context.ConnectionId, userConn.JoinCode);
                 // Add user (to game)
