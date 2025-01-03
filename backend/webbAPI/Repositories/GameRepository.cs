@@ -70,7 +70,7 @@ namespace webbAPI.Repositories
             try
             {
                 var dbCommand = new SqlCommand(query, dbConnection);
-                dbCommand.Parameters.Add("@creatorId", SqlDbType.Int).Value = id;
+                dbCommand.Parameters.Add("@id", SqlDbType.Int).Value = id;
 
                 dbConnection.Open();
 

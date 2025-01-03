@@ -184,7 +184,7 @@ namespace webbAPI.Repositories
                                 Username = reader["username"].ToString() ?? "",
                                 TotalPoints = (int)reader["total_points"],
                                 Wins = (int)reader["wins"],
-                                ActiveGameId = reader["active_game_id"] != DBNull.Value ? (int)reader["active_game_id"] : (int?)null,
+                                // ActiveGameId = reader["active_game_id"] != DBNull.Value ? (int)reader["active_game_id"] : (int?)null,
                             },
                             TotalRoundPoints = (int)reader["totalPointsFromGame"]
                         }

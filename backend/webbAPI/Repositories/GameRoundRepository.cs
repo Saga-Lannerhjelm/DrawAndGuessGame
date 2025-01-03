@@ -63,28 +63,27 @@ namespace webbAPI.Repositories
             }
         }
 
+        public int Delete (int id, out string errorMsg) 
+        {
+            string query = "DELETE FROM game_rounds WHERE id = @id";
+            errorMsg = "";
 
-        // public int DELETE (int id, out string errorMsg) 
-        // {
-        //     string query = "DELETE FROM games WHERE id = @id";
-        //     errorMsg = "";
+            using SqlConnection dbConnection = new(_connectionString);
+            try
+            {
+                var dbCommand = new SqlCommand(query, dbConnection);
+                dbCommand.Parameters.Add("@id", SqlDbType.Int).Value = id;
 
-        //     using SqlConnection dbConnection = new(_connectionString);
-        //     try
-        //     {
-        //         var dbCommand = new SqlCommand(query, dbConnection);
-        //         dbCommand.Parameters.Add("@creatorId", SqlDbType.Int).Value = id;
+                dbConnection.Open();
 
-        //         dbConnection.Open();
-
-        //         return dbCommand.ExecuteNonQuery();
-        //     }
-        //     catch (Exception e)
-        //     {
-        //         errorMsg = e.Message;
-        //         return 0;
-        //     }
-        // }
+                return dbCommand.ExecuteNonQuery();
+            }
+            catch (Exception e)
+            {
+                errorMsg = e.Message;
+                return 0;
+            }
+        }
 
         public GameRound? GetGameRoundByGameId (int gameId, out string errorMsg) 
         {

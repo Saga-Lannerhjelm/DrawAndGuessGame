@@ -26,11 +26,11 @@ namespace webbAPI.Services
                 try
                 {
                     var games = _gameRepository.GetActiveGames(out string error) ?? new List<Game>();
+                    // Console.WriteLine("get active games from DB");
 
                     if (games.Count != 0 || string.IsNullOrEmpty(error))
                     {
                         // Error: Transaction (Process ID 63) was deadlocked on lock resources with another process and has been chosen as the deadlock victim. Rerun the transaction.
-                        Console.WriteLine("In round");
                         foreach (var game in games)
                         {
                                 var round = _gameRoundRepository.GetGameRoundByGameId(game.Id, out error) ?? new GameRound();
@@ -40,6 +40,7 @@ namespace webbAPI.Services
                                     {
                                         round.Time--;
                                         var affectedRows = _gameRoundRepository.Update(round, out error);
+                                        Console.WriteLine("update time in DB");
 
                                         if (affectedRows != 0 || string.IsNullOrEmpty(error))
                                         {

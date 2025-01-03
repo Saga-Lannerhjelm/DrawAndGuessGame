@@ -428,31 +428,65 @@ namespace webbAPI.Hubs
                 _sharedDB.Connection.Remove(Context.ConnectionId, out _);
                 Clients.Group(userConn.JoinCode).SendAsync("GameStatus", $"{userConn.Username} har lämnat spelet");
 
+                var usersInGame = _sharedDB.Connection.Where(e => e.Value.JoinCode == userConn.JoinCode).ToList();
+
                 try
                 {
                     GetGameAndRound(userConn.JoinCode, out Game? currentGame, out GameRound? currentRound);
                     currentGame ??= new Game();
                     currentRound ??= new GameRound();
-                    
-                    if (currentGame.IsActive)
+                    string error = "";
+
+                    // If game has no round or users
+                    if (currentRound.Id == 0 && usersInGame.Count == 0)
                     {
-                        var users = _userRepository.GetUsersByRound(currentRound.Id, out string error);
+                        var affectedRows = _gameRepository.Delete(currentGame.Id, out error);
+                        if (affectedRows == 0 || string.IsNullOrEmpty(error))
+                        {
+                            Console.WriteLine("Deleted game");
+                        }
+                    }
 
-                        if (users == null || !string.IsNullOrEmpty(error))
+                    // if game has no users and round is 1 and round is not finished
+                    if ( usersInGame.Count == 0 && currentRound.RoundNr == 1 && currentRound.RoundComplete == false)
+                    {
+                        var affectedRows = _gameRepository.Delete(currentGame.Id, out error);
+                        if (affectedRows == 0 || string.IsNullOrEmpty(error))
+                        {
+                            Console.WriteLine("Deleted game");
+                        }
+                    }
+
+                    if (currentGame.IsActive && currentRound.Id != 0)
+                    {
+                        var users = _userRepository.GetUsersByRound(currentRound.Id, out error);
+                        var disconnectedUser = users?.Find(u => u.Info.Id == userConn.Id) ?? new UserVM();
+                        if (disconnectedUser.TotalRoundPoints == 0)
+                        {
+                            // Delete user in round if it hasn't received any points
+                            var affectedRows = _userRepository.DeleteUserInRound(disconnectedUser.Round.Id, out error);
+
+                            if (!string.IsNullOrEmpty(error))
+                            {
+                                Console.WriteLine("Error: ", error);
+                            }
+                            users?.Remove(disconnectedUser);
+                            UsersInRound(currentRound.Id, userConn.JoinCode);    
+                        }
+
+                        if ((users == null || users.Count == 0)&& currentRound.RoundComplete == false) {
+                            // Delete game_round
+                            var affectedRows = _gameRoundRepository.Delete(currentRound.Id, out error);
+                            if (affectedRows == 0 || string.IsNullOrEmpty(error))
+                            {
+                                Console.WriteLine("Deleted game");
+                            }
+                        }
+
+                        if ( !string.IsNullOrEmpty(error))
                         {
                             Console.WriteLine("Error: ", error);
                         }
-
-                        var disconnectedUser = users?.Find(u => u.Info.Id == userConn.Id)?.Round ?? new UserInRound();
-                        var affectedRows = _userRepository.DeleteUserInRound(disconnectedUser.Id, out error);
-
-                        if (!string.IsNullOrEmpty(error))
-                        {
-                            Console.WriteLine("Error: ", error);
-                        }
-
-                        UsersInRound(currentRound.Id, userConn.JoinCode);    
-                        
                     }
                     else {
                         UsersInGame(userConn.JoinCode);    
