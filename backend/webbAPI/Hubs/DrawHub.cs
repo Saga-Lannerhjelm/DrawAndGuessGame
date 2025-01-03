@@ -376,7 +376,17 @@ namespace webbAPI.Hubs
 
                 if (round.RoundNr >= 3)
                 {
-                    await Clients.Group(roomCode).SendAsync("GameFinished");
+                    var gameWinner = users?.MaxBy(c => c?.TotalRoundPoints)?.Info ?? new User();
+                    if (gameWinner.Id != 0)
+                    {
+                        gameWinner.Wins ++;
+                        affectedRows = _userRepository.UpdateUser(gameWinner, out error);
+
+                        if (string.IsNullOrEmpty(error))
+                        {
+                            await Clients.Group(roomCode).SendAsync("GameFinished");
+                        }
+                    }
                 }
                 
             await Clients.Group(roomCode).SendAsync("RoundEnded");

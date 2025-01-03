@@ -66,6 +66,30 @@ namespace webbAPI.Repositories
             }
         }
 
+         public int UpdateUser(User user, out string errorMsg) 
+        {
+            string query = "UPDATE users SET username = @username, total_points = @totalPoints, wins = @wins WHERE id = @id;";
+            errorMsg = "";
+
+            using SqlConnection dbConnection = new(_connectionString);
+            try
+            {
+                var dbCommand = new SqlCommand(query, dbConnection);
+                dbCommand.Parameters.Add("@username", SqlDbType.VarChar, 50).Value = user.Username;
+                dbCommand.Parameters.Add("@totalPoints", SqlDbType.Int).Value = user.TotalPoints;
+                dbCommand.Parameters.Add("@wins", SqlDbType.Int).Value = user.Wins;
+                dbCommand.Parameters.Add("@id", SqlDbType.Int).Value = user.Id;
+                dbConnection.Open();
+
+                return dbCommand.ExecuteNonQuery();
+            }
+            catch (Exception e)
+            {
+                errorMsg = e.Message;
+                return 0;
+            }
+        }
+
         public int UpdateUserInRound(UserInRound user, out string errorMsg) 
         {
             string query = "UPDATE user_in_round SET is_drawing = @isDrawing, points = @points, guessed_correctly = @guessedCorrectly, guessed_first = @guessedFirst, user_id = @userId, game_round_id = @gameRoundId WHERE id = @userInRoundId;";

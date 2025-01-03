@@ -5,7 +5,7 @@ const TopSection = ({ time, round }) => {
   return (
     <div className="top-section">
       <span>
-        Runda {round} av {totalRounds}
+        Runda {round.roundNr} av {totalRounds}
       </span>
       <span>00:{time}</span>
     </div>

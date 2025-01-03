@@ -226,6 +226,37 @@ form input {
   margin-left: -24px;
 }
 
+.result-box {
+  background-color: white;
+  color: black;
+  border-radius: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  justify-self: center;
+  align-self: center;
+  width: 30vw;
+  height: auto;
+  padding: 2rem;
+}
+
+.result-box h2 {
+  margin: 0;
+  margin-bottom: 1rem;
+}
+
+.result-box button {
+  margin-top: 2rem;
+}
+
+.result-user {
+  display: flex;
+  justify-content: space-between;
+}
+
+.result-user p {
+  margin: 0.5rem 0;
+}
+
 @media screen and (max-width: 780px) {
   .standard-form {
     max-width: 100%;
