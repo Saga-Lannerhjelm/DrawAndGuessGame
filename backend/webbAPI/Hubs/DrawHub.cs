@@ -90,6 +90,7 @@ namespace webbAPI.Hubs
                         var newGameRound = new GameRound {
                             GameId = currentGame.Id,
                             Word = word,
+                            StartTime = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time"))
                         };
                         
                         var roundId = _gameRoundRepository.Insert(newGameRound, out error);
@@ -180,7 +181,10 @@ namespace webbAPI.Hubs
         }
         public async Task Drawing(Point start, Point end, string color, string gameRoom) 
         {
-            await Clients.OthersInGroup(gameRoom).SendAsync("Drawing", start, end, color);
+            if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? userConn))
+            {
+                await Clients.OthersInGroup(gameRoom).SendAsync("Drawing", start, end, color, userConn.Id);
+            }
         }
 
         public async Task SendGuess(string guess)

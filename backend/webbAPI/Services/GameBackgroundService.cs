@@ -26,36 +26,31 @@ namespace webbAPI.Services
                 try
                 {
                     var games = _gameRepository.GetActiveGames(out string error) ?? new List<Game>();
-                    // Console.WriteLine("get active games from DB");
 
                     if (games.Count != 0 || string.IsNullOrEmpty(error))
                     {
-                        // Error: Transaction (Process ID 63) was deadlocked on lock resources with another process and has been chosen as the deadlock victim. Rerun the transaction.
                         foreach (var game in games)
                         {
-                                var round = _gameRoundRepository.GetGameRoundByGameId(game.Id, out error) ?? new GameRound();
-                                if (round.Id != 0 && !round.RoundComplete )
-                                {
-                                    if (round.Time > 0)
-                                    {
-                                        round.Time--;
-                                        var affectedRows = _gameRoundRepository.Update(round, out error);
-                                        Console.WriteLine("update time in DB");
+                            var round = _gameRoundRepository.GetGameRoundByGameId(game.Id, out error) ?? new GameRound();
+                            if (round.Id != 0 && !round.RoundComplete )
+                            {
+                                var currentTime =  TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time")); 
+                                var roundStartTime = round.StartTime;
+                                var pastSeconds = Math.Floor((currentTime - roundStartTime).TotalSeconds);
+                                var roundTime = 30;
 
-                                        if (affectedRows != 0 || string.IsNullOrEmpty(error))
-                                        {
-                                            await _hubContext.Clients.Group(game.JoinCode).SendAsync("ReceiveTimerData", round.Time);
-                                            if (round.Time <= 0)
-                                            {
-                                                Console.WriteLine("end");
-                                                await _hubContext.Clients.Group(game.JoinCode).SendAsync("EndRound", game.JoinCode);
-                                            }
-                                        }
+                                if (pastSeconds <= roundTime)
+                                {
+                                    var timerValue = roundTime - pastSeconds;
+                                    await _hubContext.Clients.Group(game.JoinCode).SendAsync("ReceiveTimerData", timerValue);
+                                    if (timerValue <= 0)
+                                    {
+                                        await _hubContext.Clients.Group(game.JoinCode).SendAsync("EndRound", game.JoinCode);
                                     }
                                 }
                             }
+                        }
                     }
-
                     await Task.Delay(1000);
                 }
                 catch (Exception ex)
