@@ -14,6 +14,8 @@ namespace webbAPI.Hubs
         private readonly GameRoundRepository _gameRoundRepository;
         private readonly UserRepository _userRepository;
 
+        private static readonly Dictionary<int, int> drawingAmmounts = [];
+
         public DrawHub (SharedDB sharedDB, GameRepository gameRepository, GameRoundRepository gameRoundRepository, UserRepository userRepository)
         {
             _sharedDB = sharedDB;
@@ -183,6 +185,15 @@ namespace webbAPI.Hubs
         {
             if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? userConn))
             {
+                if (drawingAmmounts.TryGetValue(userConn.Id, out int value))
+                {
+                    drawingAmmounts[userConn.Id] = value + 1;
+                } else 
+                {
+                    drawingAmmounts.Add(userConn.Id, 1);
+                }
+
+                Console.WriteLine(drawingAmmounts);
                 await Clients.OthersInGroup(gameRoom).SendAsync("Drawing", start, end, color, userConn.Id);
             }
         }
@@ -351,23 +362,46 @@ namespace webbAPI.Hubs
                     AddPoints(winner, 5);
                 }
 
-                var usersGuessedCorrectly = users?.FindAll(user => !user.Round.GuessedFirst && !user.Round.IsDrawing && user.Round.GuessedCorrectly) ?? [];
+                var allGuessingUsers = users?.FindAll(user => !user.Round.IsDrawing) ?? [];
+                var allCorrectGuessingUsers = allGuessingUsers?.FindAll(user => user.Round.GuessedCorrectly) ?? [];
+                var usersGuessedCorrectlyButNotFirst = allGuessingUsers?.FindAll(user => !user.Round.GuessedFirst && user.Round.GuessedCorrectly) ?? [];
                 
-                if (usersGuessedCorrectly.Count != 0 || winner != null)
+                if (usersGuessedCorrectlyButNotFirst.Count != 0 || winner != null)
                 {
-                    if (usersGuessedCorrectly.Count != 0)
+                    if (usersGuessedCorrectlyButNotFirst.Count != 0)
                     {
-                        foreach (var user in usersGuessedCorrectly)
+                        foreach (var user in usersGuessedCorrectlyButNotFirst)
                         {
                             AddPoints(user, 3);
                         }
                     }
                     var artists = users?.FindAll(user => user.Round.IsDrawing) ?? new List<UserVM>();
 
+                    // Give points to artists
                     foreach (var user in artists)
                     {
-                        AddPoints(user, 4);
+                        if (user.Info.Id == drawingAmmounts.MaxBy(e => e.Value).Key)
+                        {
+                            if (allGuessingUsers.Count == allCorrectGuessingUsers.Count)
+                            {
+                                AddPoints(user, 4);
+                                
+                            } else if (allCorrectGuessingUsers.Count >= 1){
+                                AddPoints(user, 3);
+                            }
+                        }
+                        else if (user.Info.Id == drawingAmmounts.MinBy(e => e.Value).Key)
+                        {
+                           if (allGuessingUsers.Count == allCorrectGuessingUsers.Count)
+                            {
+                                AddPoints(user, 3);
+                                
+                            } else if (allCorrectGuessingUsers.Count >= 1){
+                                AddPoints(user, 2);
+                            }
+                        }
                     }
+                    drawingAmmounts.Clear();
                 }
 
 

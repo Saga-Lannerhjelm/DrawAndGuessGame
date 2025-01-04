@@ -5,12 +5,11 @@ import DrawingInfo from "./DrawingInfo";
 
 const DrawingBoard = ({ gameRoom, isDrawing, gameActive, word }) => {
   const [color, setColor] = useState("#ffffff");
-  const [amountDrawn, setAmountDrawn] = useState(0);
 
   const [loading, setLoading] = useState(true);
   const canvasRef = useRef(null);
 
-  const { connection, activeUserId } = useConnection();
+  const { connection } = useConnection();
 
   useEffect(() => {
     if (connection) {
@@ -21,6 +20,7 @@ const DrawingBoard = ({ gameRoom, isDrawing, gameActive, word }) => {
         clearCanvas();
       });
     }
+    clearCanvas();
   }, [connection]);
 
   async function getColor() {
@@ -97,7 +97,7 @@ const DrawingBoard = ({ gameRoom, isDrawing, gameActive, word }) => {
   }, [connection, gameActive, loading, isDrawing]);
 
   useEffect(() => {
-    console.log(active, amountDrawn);
+    console.log(amountDrawn);
   }, [amountDrawn]);
 
   function drawStroke(start, end, color) {
@@ -106,10 +106,6 @@ const DrawingBoard = ({ gameRoom, isDrawing, gameActive, word }) => {
     if (canvas) {
       if (!isDrawing) {
         color = "black";
-      }
-
-      if (isDrawing) {
-        setAmountDrawn((prev) => prev + 1);
       }
 
       const ctx = canvas.getContext("2d");

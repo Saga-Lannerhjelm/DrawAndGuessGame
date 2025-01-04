@@ -8,9 +8,7 @@ const GuessContainer = ({ userIsDrawing, userGuesses, isActive }) => {
   const { users, activeUserId } = useConnection();
 
   useEffect(() => {
-    console.log(users.length > 0 && users[0].username == undefined && isActive);
     if (users.length > 0 && users[0].username == undefined && isActive) {
-      console.log("active", activeUserId);
       userIsDrawing(
         users.find((user) => user.info.id == activeUserId).round.isDrawing
       );

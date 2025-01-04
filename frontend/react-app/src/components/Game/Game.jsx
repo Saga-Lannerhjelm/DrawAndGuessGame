@@ -37,7 +37,6 @@ const Game = () => {
       setJoinCode(params.room);
 
       connection.on("GameCanStart", (canStart) => {
-        // setGameActive(canStart);
         // setRound(round + 1);
       });
 
@@ -58,12 +57,10 @@ const Game = () => {
       });
 
       connection.on("receiveGameInfo", (game, round) => {
-        console.log("receive info");
         setRoomName(game.roomName);
         setGameActive(game.isActive);
 
         if (round.id != 0) {
-          console.log("round", game.isActive, round);
           setRound(round);
           setWord(round.word);
 
