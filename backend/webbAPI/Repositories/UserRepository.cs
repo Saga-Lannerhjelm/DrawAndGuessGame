@@ -223,5 +223,37 @@ namespace webbAPI.Repositories
                 return null;
             }
         }
+        public List<User> GetAllUsers (out string errorMsg) 
+        {
+            string query = "SELECT * FROM users ORDER BY wins DESC, total_points DESC;";
+            errorMsg = "";
+
+            using SqlConnection dbConnection = new(_connectionString);
+            try
+            {
+                var dbCommand = new SqlCommand(query, dbConnection);
+                dbConnection.Open();
+
+                SqlDataReader reader = dbCommand.ExecuteReader();
+                var users = new List<User>();
+
+                while (reader.Read())
+                {
+                    users.Add(new User{
+                        Id = (int)reader["id"],
+                        Username = reader["username"].ToString() ?? "",
+                        TotalPoints = (int)reader["total_points"],
+                        Wins = (int)reader["wins"],
+                    });
+                }
+
+                return users;
+            }
+            catch (Exception e)
+            {
+                errorMsg = e.Message;
+                return [];
+            }
+        }
     }
 }

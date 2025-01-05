@@ -96,9 +96,9 @@ const DrawingBoard = ({ gameRoom, isDrawing, gameActive, word }) => {
     }
   }, [connection, gameActive, loading, isDrawing]);
 
-  useEffect(() => {
-    console.log(amountDrawn);
-  }, [amountDrawn]);
+  // useEffect(() => {
+  //   console.log(amountDrawn);
+  // }, [amountDrawn]);
 
   function drawStroke(start, end, color) {
     const canvas = canvasRef.current;

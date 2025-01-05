@@ -33,5 +33,24 @@ namespace webbAPI.Controllers
             }
             return Ok(userId);
         }
+
+        [HttpGet]
+        public IActionResult Getusers()
+        {
+            // Check game does not exist
+            var users = _userRepository.GetAllUsers(out string error);
+
+            if (!string.IsNullOrEmpty(error))
+            {
+                return BadRequest(error);
+            }
+
+            if (users.Count == 0)
+            {
+                return BadRequest("No users found");
+            }
+
+            return Ok(users);
+        }
     }
 }
