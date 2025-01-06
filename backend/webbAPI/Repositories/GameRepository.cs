@@ -60,6 +60,30 @@ namespace webbAPI.Repositories
             }
         }
 
+        public int UpdateGame (Game game, out string errorMsg) 
+        {
+            string query = "UPDATE games SET is_active = @isActive, rounds = @rounds WHERE id = @gameId;";
+            errorMsg = "";
+
+            using SqlConnection dbConnection = new(_connectionString);
+            try
+            {
+                var dbCommand = new SqlCommand(query, dbConnection);
+                dbCommand.Parameters.Add("@gameId", SqlDbType.Int).Value = game.Id;
+                dbCommand.Parameters.Add("@rounds", SqlDbType.Int).Value = game.Rounds;
+                dbCommand.Parameters.Add("@isActive", SqlDbType.TinyInt).Value = game.IsActive;
+
+                dbConnection.Open();
+
+                return dbCommand.ExecuteNonQuery();
+            }
+            catch (Exception e)
+            {
+                errorMsg = e.Message;
+                return 0;
+            }
+        }
+
 
         public int Delete (int id, out string errorMsg) 
         {
@@ -105,6 +129,7 @@ namespace webbAPI.Repositories
                         Id = reader.GetInt32("id"),
                         RoomName = reader.GetString("name"),
                         JoinCode = reader.GetString("join_code"),
+                        Rounds = reader.GetInt32("rounds"),
                         IsActive = reader.GetByte("is_active") == 1,
                         CreatorId = reader.GetInt32("creator_id")
                     };
@@ -140,6 +165,7 @@ namespace webbAPI.Repositories
                         Id = reader.GetInt32("id"),
                         RoomName = reader.GetString("name"),
                         JoinCode = reader.GetString("join_code"),
+                        Rounds = reader.GetInt32("rounds"),
                         IsActive = reader.GetByte("is_active") == 1,
                         CreatorId = reader.GetInt32("creator_id")
                     });

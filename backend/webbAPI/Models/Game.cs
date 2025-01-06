@@ -10,8 +10,8 @@ namespace webbAPI.Models
         public int Id { get; set; }
         public string RoomName { get; set; } = string.Empty;
         public string JoinCode { get; set; } = string.Empty;
+        public int Rounds { get; set; }
         public bool IsActive { get; set; } = false;
         public int CreatorId { get; set; }
-        // public List<GameRound> Rounds { get; set; } = [];
     }
 }

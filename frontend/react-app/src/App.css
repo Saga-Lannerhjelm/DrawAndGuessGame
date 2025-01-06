@@ -245,6 +245,25 @@ form input {
   margin: 0.5rem 0;
 }
 
+.start-round-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.start-round-form input {
+  background-color: transparent;
+  color: white;
+  border-bottom: 1px solid white;
+  border-radius: 0;
+  padding: 0;
+  margin: 1rem;
+  text-align: center;
+}
+
+.start-round-form button {
+  width: auto;
+}
+
 @media screen and (max-width: 780px) {
   .standard-form {
     max-width: 100%;

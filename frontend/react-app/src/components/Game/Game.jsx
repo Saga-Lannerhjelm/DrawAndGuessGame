@@ -23,6 +23,7 @@ const Game = () => {
   const [roundComplete, setRoundComplete] = useState(false);
   const [time, setTime] = useState(30);
   const [userGuesses, setUserGuesses] = useState([]);
+  const [roundNr, setRoundNr] = useState(3);
 
   const navigate = useNavigate();
   const params = useParams();
@@ -113,12 +114,13 @@ const Game = () => {
     navigate("/home");
   };
 
-  const startRound = async () => {
+  const startRound = async (roundNr) => {
+    console.log(roundNr);
     if (connection) {
       setTime(30);
       // setRoundStarted(true);
       setRoundComplete(false);
-      await connection.invoke("StartRound", joinCode);
+      await connection.invoke("StartRound", joinCode, parseInt(roundNr));
       // await connection.invoke("SendTimerData", time);
     }
   };
@@ -152,14 +154,14 @@ const Game = () => {
               <ResultCard showGameResult={true} endGame={endGame} />
             ) : (
               <ResultCard
-                startNewRound={startRound}
+                startNewRound={() => startRound(roundNr)}
                 showGameResult={false}
                 roundData={round}
               />
             )
           ) : gameActive ? (
             <>
-              <TopSection time={time} round={round} />
+              <TopSection time={time} round={round} roundNr={roundNr} />
               <div id="canvas-container">
                 <DrawingBoard
                   gameRoom={joinCode}
@@ -171,15 +173,29 @@ const Game = () => {
               {!isDrawing && <GuessForm sendGuess={sendGuess} />}
             </>
           ) : roomOwner && roomOwner == activeUserId ? (
-            <button
-              onClick={startRound}
-              className="btn"
-              disabled={users.length < 3}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                startRound(roundNr);
+              }}
+              className="start-round-form"
             >
-              {users.length >= 3
-                ? "Är alla spelare inne? Starta spelet"
-                : "Spelet måste minst ha tre spelare"}
-            </button>
+              <div>
+                <label htmlFor="nrInput">Välj antal rundor:</label>
+                <input
+                  id="nrInput"
+                  type="number"
+                  min={3}
+                  max={10}
+                  onChange={(e) => setRoundNr(e.target.value)}
+                />
+              </div>
+              <button type="submit" className="btn" disabled={users.length < 3}>
+                {users.length >= 3
+                  ? "Är alla spelare inne? Starta spelet"
+                  : "Spelet måste minst ha tre spelare"}
+              </button>
+            </form>
           ) : (
             <p>Vänar på att ägaren startar spelet...</p>
           )}

@@ -141,15 +141,14 @@ const DrawingBoard = ({ gameRoom, isDrawing, gameActive, round }) => {
   const changeWord = async () => {
     if (connection) {
       connection.invoke("RequestNewWord", gameRoom, round);
+      clearCanvas();
     }
   };
 
   return (
     <>
       <div>
-        {/* {gameActive &&  */}
-        <canvas ref={canvasRef} className="canvas"></canvas>
-        {/* } */}
+        {gameActive && <canvas ref={canvasRef} className="canvas"></canvas>}
         {isDrawing && (
           <DrawingInfo
             clearCanvas={sendClearCanvas}

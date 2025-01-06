@@ -46,7 +46,7 @@ namespace webbAPI.Hubs
             }
         }
 
-        public async Task StartRound(string joinCode)
+        public async Task StartRound(string joinCode, int roundNr)
         {
             var allUsersInGame = _sharedDB.Connection.Values
             .Where(g => g.JoinCode == joinCode).ToList();
@@ -67,8 +67,14 @@ namespace webbAPI.Hubs
                         if (!currentGame.IsActive)
                         {
                             // Update gamestate to active
-                            UpdateActiveState(currentGame);
                             currentGame.IsActive = true;
+                            currentGame.Rounds = roundNr;
+                            var affectedRows = _gameRepository.UpdateGame(currentGame, out error);
+
+                            if (affectedRows == 0 || !string.IsNullOrEmpty(error))
+                            {
+                                throw new Exception(error);
+                            }
                         }
 
                         // Get word
@@ -424,7 +430,7 @@ namespace webbAPI.Hubs
                     throw new Exception(error);
                 }
 
-                if (round.RoundNr >= 3)
+                if (round.RoundNr >= currentGame.Rounds)
                 {
                     if (users?.Find(u => u.TotalRoundPoints > 0) != null)
                     {

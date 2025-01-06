@@ -18,7 +18,7 @@ const GuessForm = ({ sendGuess }) => {
           onChange={(e) => setGuess(e.target.value)}
           value={guess}
         />
-        <button type="submit" className="btn">
+        <button type="submit" className="btn" disabled={guess == ""}>
           Skicka
         </button>
       </form>
