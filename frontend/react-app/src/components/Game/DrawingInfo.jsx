@@ -1,11 +1,12 @@
 import React from "react";
 
-const DrawingInfo = ({ clearCanvas, word }) => {
+const DrawingInfo = ({ clearCanvas, word, changeWord }) => {
   return (
     <div className="draw-info-container">
       <div>
         <p>Du och XXX ritar</p>
         <p>Rita en: {word.toUpperCase()}</p>
+        <button onClick={changeWord}></button>
       </div>
       <button className="btn" onClick={clearCanvas}>
         Rensa

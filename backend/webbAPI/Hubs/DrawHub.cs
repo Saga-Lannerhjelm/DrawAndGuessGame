@@ -80,7 +80,7 @@ namespace webbAPI.Hubs
                         string word = "default word";
                         try
                         {
-                            word = await GetWord();  
+                            word = await _gameRoundRepository.GetWord();  
                         }
                         catch (Exception ex)
                         {
@@ -166,21 +166,35 @@ namespace webbAPI.Hubs
             }
         }
 
-        public async Task<string> GetWord () 
-        {
-            // Link to API https://random-word-form.herokuapp.com
-            HttpClient client = new();
-            HttpResponseMessage response = await client.GetAsync("https://random-word-form.herokuapp.com/random/noun");
+        public async Task RequestNewWord (string gameRoom, GameRound round) {
+            string newWord = await _gameRoundRepository.GetWord();
+            round.Word = newWord;
 
-            if (response.IsSuccessStatusCode)
+            var users = _userRepository.GetUsersByRound(round.Id, out string error);
+
+            var affectedRows = _gameRoundRepository.Update(round, out error);
+
+            if (string.IsNullOrEmpty(error) || affectedRows != 0)
             {
-                string apiResp = await response.Content.ReadAsStringAsync();
-                string[] words = JsonConvert.DeserializeObject<string[]>(apiResp) ?? [];
-                return (words?.Length > 0) ? words[0] : "default word";
-            } else {
-                return "Default word";
+                foreach (var user in users)
+                {
+                    if (!user.Round.IsDrawing)
+                    {
+                        user.Round.GuessedCorrectly = false;
+                        user.Round.GuessedFirst = false;
+                        affectedRows = _userRepository.UpdateUserInRound(user.Round, out error);
+                        
+                        if (!string.IsNullOrEmpty(error) || affectedRows == 0)
+                        {
+                            Console.WriteLine(error);
+                        }
+                    }
+                }
+                await GameInfo(gameRoom);
             }
+
         }
+
         public async Task Drawing(Point start, Point end, string color, string gameRoom) 
         {
             if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? userConn))

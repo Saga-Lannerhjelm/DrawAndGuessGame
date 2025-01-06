@@ -3,7 +3,7 @@ import { useConnection } from "../../context/ConnectionContext";
 import { useParams } from "react-router-dom";
 import DrawingInfo from "./DrawingInfo";
 
-const DrawingBoard = ({ gameRoom, isDrawing, gameActive, word }) => {
+const DrawingBoard = ({ gameRoom, isDrawing, gameActive, round }) => {
   const [color, setColor] = useState("#ffffff");
 
   const [loading, setLoading] = useState(true);
@@ -19,6 +19,9 @@ const DrawingBoard = ({ gameRoom, isDrawing, gameActive, word }) => {
       connection.on("clearCanvas", () => {
         clearCanvas();
       });
+      // connection.on("receiveChangedWord", (newWord) => {
+      //   round.word = newWord;
+      // });
     }
     clearCanvas();
   }, [connection]);
@@ -96,9 +99,9 @@ const DrawingBoard = ({ gameRoom, isDrawing, gameActive, word }) => {
     }
   }, [connection, gameActive, loading, isDrawing]);
 
-  useEffect(() => {
-    console.log(amountDrawn);
-  }, [amountDrawn]);
+  // useEffect(() => {
+  //   console.log(amountDrawn);
+  // }, [amountDrawn]);
 
   function drawStroke(start, end, color) {
     const canvas = canvasRef.current;
@@ -131,13 +134,26 @@ const DrawingBoard = ({ gameRoom, isDrawing, gameActive, word }) => {
     const ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   }
+
+  const changeWord = async () => {
+    if (connection) {
+      connection.invoke("RequestNewWord", gameRoom, round);
+    }
+  };
+
   return (
     <>
       <div>
         {/* {gameActive &&  */}
         <canvas ref={canvasRef} className="canvas"></canvas>
         {/* } */}
-        {isDrawing && <DrawingInfo clearCanvas={sendClearCanvas} word={word} />}
+        {isDrawing && (
+          <DrawingInfo
+            clearCanvas={sendClearCanvas}
+            word={round.word}
+            changeWord={changeWord}
+          />
+        )}
       </div>
     </>
   );

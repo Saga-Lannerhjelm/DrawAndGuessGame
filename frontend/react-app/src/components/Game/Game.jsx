@@ -21,7 +21,6 @@ const Game = () => {
   const [showFinalResult, setShowFinalResult] = useState(false);
   // const [roundStarted, setRoundStarted] = useState(false);
   const [roundComplete, setRoundComplete] = useState(false);
-  const [word, setWord] = useState("");
   const [time, setTime] = useState(30);
   const [userGuesses, setUserGuesses] = useState([]);
 
@@ -62,7 +61,6 @@ const Game = () => {
 
         if (round.id != 0) {
           setRound(round);
-          setWord(round.word);
 
           setTimeout(() => {
             setRoundComplete(round.roundComplete);
@@ -170,7 +168,7 @@ const Game = () => {
                   gameRoom={joinCode}
                   gameActive={gameActive}
                   isDrawing={isDrawing}
-                  word={word}
+                  round={round}
                 />
               </div>
               {!isDrawing && <GuessForm sendGuess={sendGuess} />}
