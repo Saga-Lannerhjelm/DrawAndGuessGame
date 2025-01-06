@@ -86,7 +86,21 @@ form input {
 
 .header {
   background-color: var(--header-color);
-  padding: 1rem 0;
+  padding: 0.5rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header div {
+  display: flex;
+  gap: 1rem;
+}
+
+.header button {
+  border-radius: 0.5rem;
+  border: none;
+  padding: 5px 10px;
 }
 
 .canvas {
