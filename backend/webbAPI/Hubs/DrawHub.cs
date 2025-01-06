@@ -431,15 +431,18 @@ namespace webbAPI.Hubs
 
                 if (round.RoundNr >= 3)
                 {
-                    var gameWinner = users?.MaxBy(c => c?.TotalRoundPoints)?.Info ?? new User();
-                    if (gameWinner.Id != 0)
+                    if (users?.Find(u => u.TotalRoundPoints > 0) != null)
                     {
-                        gameWinner.Wins ++;
-                        affectedRows = _userRepository.UpdateUser(gameWinner, out error);
-
-                        if (string.IsNullOrEmpty(error))
+                        var gameWinner = users?.MaxBy(c => c?.TotalRoundPoints)?.Info ?? new User();
+                        if (gameWinner.Id != 0)
                         {
-                            await Clients.Group(roomCode).SendAsync("GameFinished");
+                            gameWinner.Wins ++;
+                            affectedRows = _userRepository.UpdateUser(gameWinner, out error);
+
+                            if (string.IsNullOrEmpty(error))
+                            {
+                                await Clients.Group(roomCode).SendAsync("GameFinished");
+                            }
                         }
                     }
                 }
