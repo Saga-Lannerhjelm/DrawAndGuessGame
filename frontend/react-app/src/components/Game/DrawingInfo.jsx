@@ -6,7 +6,7 @@ const DrawingInfo = ({ clearCanvas, word, changeWord }) => {
       <div>
         <p>Du och XXX ritar</p>
         <p>Rita en: {word.toUpperCase()}</p>
-        <button onClick={changeWord}></button>
+        <button onClick={changeWord}>Ändra ord</button>
       </div>
       <button className="btn" onClick={clearCanvas}>
         Rensa

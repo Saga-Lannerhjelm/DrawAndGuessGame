@@ -12,14 +12,14 @@ import TopSection from "./TopSection";
 import ResultCard from "./ResultCard";
 
 const Game = () => {
-  const { connection } = useConnection();
+  const { connection, activeUserId } = useConnection();
   const [roomName, setRoomName] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [isDrawing, setIsDrawing] = useState(false);
   const [gameActive, setGameActive] = useState(false);
   const [round, setRound] = useState(undefined);
+  const [roomOwner, setRoomOwner] = useState(undefined);
   const [showFinalResult, setShowFinalResult] = useState(false);
-  // const [roundStarted, setRoundStarted] = useState(false);
   const [roundComplete, setRoundComplete] = useState(false);
   const [time, setTime] = useState(30);
   const [userGuesses, setUserGuesses] = useState([]);
@@ -58,6 +58,7 @@ const Game = () => {
       connection.on("receiveGameInfo", (game, round) => {
         setRoomName(game.roomName);
         setGameActive(game.isActive);
+        setRoomOwner(game.creatorId);
 
         if (round.id != 0) {
           setRound(round);
@@ -74,18 +75,12 @@ const Game = () => {
         // console.log(time);
       });
 
-      // connection.on("RoundEnded", (time) => {
-      //   // setRoundStarted(false);
-      // });
-
       connection.on("GameFinished", () => {
         setShowFinalResult(true);
-        // setRound();
       });
 
       connection.on("EndRound", (joinCode) => {
         console.log("in ended round");
-        // setRoundStarted(false);
         connection.invoke("EndRound", joinCode);
       });
 
@@ -147,6 +142,8 @@ const Game = () => {
         joinCode={joinCode}
         onclick={leaveRoom}
         endGame={endGame}
+        roomOwner={roomOwner}
+        activeUserId={activeUserId}
       />
       <div className="game-container">
         <div>
@@ -173,16 +170,19 @@ const Game = () => {
               </div>
               {!isDrawing && <GuessForm sendGuess={sendGuess} />}
             </>
-          ) : (
+          ) : roomOwner && roomOwner == activeUserId ? (
             <button onClick={startRound} className="btn">
-              Starta spelet
+              Är alla spelare inne? Starta spelet
             </button>
+          ) : (
+            <p>Vänar på att ägaren startar spelet...</p>
           )}
         </div>
         <GuessContainer
           userIsDrawing={(bool) => setIsDrawing(bool)}
           userGuesses={userGuesses}
           isActive={gameActive}
+          roomOwner={roomOwner}
         />
       </div>
     </>

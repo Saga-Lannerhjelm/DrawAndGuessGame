@@ -52,9 +52,12 @@ const DrawingBoard = ({ gameRoom, isDrawing, gameActive, round }) => {
       const canvas = canvasRef.current;
 
       const handelResize = () => {
-        canvas.width = document.getElementById("canvas-container").offsetWidth;
-        canvas.height =
-          document.getElementById("canvas-container").offsetHeight;
+        canvas.width = window.innerWidth - window.innerWidth / 2;
+        canvas.height = window.innerHeight - window.innerHeight / 3;
+
+        //   canvas.width = document.getElementById("canvas-container").offsetWidth;
+        // canvas.height =
+        //   document.getElementById("canvas-container").offsetHeight;
       };
 
       handelResize();

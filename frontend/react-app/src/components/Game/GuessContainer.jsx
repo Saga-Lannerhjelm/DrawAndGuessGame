@@ -4,7 +4,12 @@ import { useConnection } from "../../context/ConnectionContext";
 import { useParams } from "react-router-dom";
 import Message from "./Message";
 
-const GuessContainer = ({ userIsDrawing, userGuesses, isActive }) => {
+const GuessContainer = ({
+  userIsDrawing,
+  userGuesses,
+  isActive,
+  roomOwner,
+}) => {
   const { users, activeUserId } = useConnection();
 
   useEffect(() => {
@@ -39,6 +44,7 @@ const GuessContainer = ({ userIsDrawing, userGuesses, isActive }) => {
                 <p>
                   {user.info.username}{" "}
                   {user.info.id == activeUserId ? "(Du)" : ""}
+                  {user.info.id == roomOwner ? "- Ägare" : ""}
                 </p>
                 <p>{user.totalRoundPoints} poäng</p>
               </div>
@@ -51,7 +57,8 @@ const GuessContainer = ({ userIsDrawing, userGuesses, isActive }) => {
             >
               <div>
                 <p>
-                  {user.username} {user.id == activeUserId ? "(Du)" : ""}
+                  {user.username} {user.id == activeUserId ? "(Du)" : ""}{" "}
+                  {user.id == roomOwner ? "- Ägare" : ""}
                 </p>
                 <p></p>
               </div>
