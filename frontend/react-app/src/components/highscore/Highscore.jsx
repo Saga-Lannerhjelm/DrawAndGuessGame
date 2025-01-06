@@ -15,7 +15,9 @@ const Highscore = () => {
       if (!response.ok) throw new Error(`Response status: ${response.status}`);
       const result = await response.json();
 
-      setUsersInList(result);
+      const filteredResults = result.filter((u) => u.totalPoints > 0);
+
+      setUsersInList(filteredResults);
     } catch (error) {
       console.error(error);
       return null;
@@ -24,6 +26,7 @@ const Highscore = () => {
 
   return (
     <div>
+      <h2>Topplistan</h2>
       {usersInList.length > 0 && (
         <div className="highscore-grid">
           <div>
@@ -40,14 +43,15 @@ const Highscore = () => {
                   : {}
               }
             >
-              <p>{user.username}</p>
+              <p>
+                {index + 1}. {user.username}
+              </p>
               <p>{user.wins}</p>
               <p>{user.totalPoints}</p>
             </div>
           ))}
         </div>
       )}
-      <h2>Topplistan</h2>
     </div>
   );
 };
