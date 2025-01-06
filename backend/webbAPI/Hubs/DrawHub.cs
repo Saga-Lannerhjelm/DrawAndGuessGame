@@ -67,12 +67,7 @@ namespace webbAPI.Hubs
                         if (!currentGame.IsActive)
                         {
                             // Update gamestate to active
-                            var affectedRows = _gameRepository.UpdateActiveState(currentGame.Id, true, out error);
-
-                            if (affectedRows == 0 || !string.IsNullOrEmpty(error))
-                            {
-                                throw new Exception(error);
-                            }
+                            UpdateActiveState(currentGame);
                             currentGame.IsActive = true;
                         }
 
@@ -477,16 +472,23 @@ namespace webbAPI.Hubs
 
                 if (currentGame != null && string.IsNullOrEmpty(error))
                 {
-                    currentGame.IsActive = false;
-                    var affectedRows = _gameRepository.UpdateActiveState(currentGame.Id, currentGame.IsActive, out error);
-
-                    if (affectedRows != 0 || string.IsNullOrEmpty(error))
-                    {
-                        await GameInfo(currentGame.JoinCode);
-                    }
+                    UpdateActiveState(currentGame);
+                    await GameInfo(currentGame.JoinCode);
                 }
                 await Clients.Group(userConn.JoinCode).SendAsync("leaveGame");
             }
+        }
+
+        private void UpdateActiveState(Game currentGame)
+        {
+            currentGame.IsActive = !currentGame.IsActive;
+            var affectedRows = _gameRepository.UpdateActiveState(currentGame.Id, currentGame.IsActive, out string error);
+
+            if (affectedRows == 0 || !string.IsNullOrEmpty(error))
+            {
+                Console.WriteLine(error);
+                throw new Exception(error);
+            } 
         }
 
         public override Task OnDisconnectedAsync(Exception? exception)
@@ -504,6 +506,12 @@ namespace webbAPI.Hubs
                     currentGame ??= new Game();
                     currentRound ??= new GameRound();
                     string error = "";
+
+                    if (usersInGame.Count == 0 && currentGame.IsActive)
+                    {
+                        UpdateActiveState(currentGame);
+                        GameInfo(currentGame.JoinCode);
+                    }
 
                     // If game has no round or users
                     if (currentRound.Id == 0 && usersInGame.Count == 0)
