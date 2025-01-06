@@ -4,12 +4,7 @@ import { useConnection } from "../../context/ConnectionContext";
 import { useParams } from "react-router-dom";
 import Message from "./Message";
 
-const GuessContainer = ({
-  userIsDrawing,
-  userGuesses,
-  isActive,
-  roomOwner,
-}) => {
+const UserContainer = ({ userIsDrawing, userGuesses, isActive, roomOwner }) => {
   const { users, activeUserId } = useConnection();
 
   useEffect(() => {
@@ -70,4 +65,4 @@ const GuessContainer = ({
   );
 };
 
-export default GuessContainer;
+export default UserContainer;

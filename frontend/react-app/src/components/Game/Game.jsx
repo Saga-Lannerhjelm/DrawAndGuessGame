@@ -3,7 +3,7 @@ import { HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
 import { useConnection } from "../../context/ConnectionContext";
 import { useNavigate, useParams } from "react-router-dom";
 import DrawingBoard from "./DrawingBoard";
-import GuessContainer from "./GuessContainer";
+import UserContainer from "./GuessContainer";
 import Users from "./Users";
 import Header from "../Header";
 import GuessForm from "./GuessForm";
@@ -12,7 +12,7 @@ import TopSection from "./TopSection";
 import ResultCard from "./ResultCard";
 
 const Game = () => {
-  const { connection, activeUserId } = useConnection();
+  const { connection, activeUserId, users } = useConnection();
   const [roomName, setRoomName] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [isDrawing, setIsDrawing] = useState(false);
@@ -171,14 +171,20 @@ const Game = () => {
               {!isDrawing && <GuessForm sendGuess={sendGuess} />}
             </>
           ) : roomOwner && roomOwner == activeUserId ? (
-            <button onClick={startRound} className="btn">
-              Är alla spelare inne? Starta spelet
+            <button
+              onClick={startRound}
+              className="btn"
+              disabled={users.length < 3}
+            >
+              {users.length >= 3
+                ? "Är alla spelare inne? Starta spelet"
+                : "Spelet måste minst ha tre spelare"}
             </button>
           ) : (
             <p>Vänar på att ägaren startar spelet...</p>
           )}
         </div>
-        <GuessContainer
+        <UserContainer
           userIsDrawing={(bool) => setIsDrawing(bool)}
           userGuesses={userGuesses}
           isActive={gameActive}
