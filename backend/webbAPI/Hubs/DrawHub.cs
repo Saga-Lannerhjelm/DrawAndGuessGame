@@ -526,11 +526,7 @@ namespace webbAPI.Hubs
                     // if game has no users and round is 1 and round is not finished
                     if ( usersInGame.Count == 0 && currentRound.RoundNr == 1 && currentRound.RoundComplete == false)
                     {
-                        var affectedRows = _gameRepository.Delete(currentGame.Id, out error);
-                        if (affectedRows == 0 || string.IsNullOrEmpty(error))
-                        {
-                            Console.WriteLine("Deleted game");
-                        }
+                        DeleteGame(currentGame);
                     }
 
                     if (currentGame.IsActive && currentRound.Id != 0)
@@ -555,13 +551,12 @@ namespace webbAPI.Hubs
                             var affectedRows = _gameRoundRepository.Delete(currentRound.Id, out error);
                             if (affectedRows == 0 || string.IsNullOrEmpty(error))
                             {
-                                Console.WriteLine("Deleted game");
+                                Console.WriteLine("Deleted round");
                             }
-                        }
-
-                        if ( !string.IsNullOrEmpty(error))
-                        {
-                            Console.WriteLine("Error: ", error);
+                            if ( !string.IsNullOrEmpty(error))
+                            {
+                                Console.WriteLine("Error: ", error);
+                            }
                         }
                     }
                     else {
@@ -574,6 +569,18 @@ namespace webbAPI.Hubs
                 }
             }
             return base.OnDisconnectedAsync(exception);
+        }
+
+        private string DeleteGame(Game currentGame)
+        {
+            string error;
+            var affectedRows = _gameRepository.Delete(currentGame.Id, out error);
+            if (affectedRows == 0 || string.IsNullOrEmpty(error))
+            {
+                Console.WriteLine("Deleted game");
+            }
+
+            return error;
         }
     }
 }
