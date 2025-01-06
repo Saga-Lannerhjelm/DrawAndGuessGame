@@ -170,11 +170,9 @@ namespace webbAPI.Hubs
             string newWord = await _gameRoundRepository.GetWord();
             round.Word = newWord;
 
-            var users = _userRepository.GetUsersByRound(round.Id, out string error);
+            var users = _userRepository.GetUsersByRound(round.Id, out string error) ?? new List<UserVM>();
 
-            var affectedRows = _gameRoundRepository.Update(round, out error);
-
-            if (string.IsNullOrEmpty(error) || affectedRows != 0)
+            if (users.Count > 0 || string.IsNullOrEmpty(error))
             {
                 foreach (var user in users)
                 {
@@ -182,15 +180,20 @@ namespace webbAPI.Hubs
                     {
                         user.Round.GuessedCorrectly = false;
                         user.Round.GuessedFirst = false;
-                        affectedRows = _userRepository.UpdateUserInRound(user.Round, out error);
+                        var rows = _userRepository.UpdateUserInRound(user.Round, out error);
                         
-                        if (!string.IsNullOrEmpty(error) || affectedRows == 0)
+                        if (!string.IsNullOrEmpty(error) || rows == 0)
                         {
                             Console.WriteLine(error);
                         }
                     }
                 }
-                await GameInfo(gameRoom);
+                var affectedRows = _gameRoundRepository.Update(round, out error);
+                if (string.IsNullOrEmpty(error) || affectedRows != 0)
+                {
+                    await UsersInRound(round.Id, gameRoom);
+                    await GameInfo(gameRoom); 
+                }
             }
 
         }
