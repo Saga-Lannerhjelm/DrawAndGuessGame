@@ -4,6 +4,7 @@ using webbAPI.DataService;
 using webbAPI.Models;
 using webbAPI.Models.ViewModels;
 using webbAPI.Repositories;
+using webbAPI.Services;
 
 namespace webbAPI.Hubs
 {
@@ -13,15 +14,17 @@ namespace webbAPI.Hubs
         private readonly GameRepository _gameRepository;
         private readonly GameRoundRepository _gameRoundRepository;
         private readonly UserRepository _userRepository;
+        private readonly GameService _gameService;
 
         private static readonly Dictionary<int, int> drawingAmmounts = [];
 
-        public DrawHub (SharedDB sharedDB, GameRepository gameRepository, GameRoundRepository gameRoundRepository, UserRepository userRepository)
+        public DrawHub (SharedDB sharedDB, GameRepository gameRepository, GameRoundRepository gameRoundRepository, UserRepository userRepository, GameService gameService)
         {
             _sharedDB = sharedDB;
             _gameRepository = gameRepository;
             _gameRoundRepository = gameRoundRepository;
             _userRepository = userRepository;
+            _gameService = gameService;
         }
         public async Task JoinGame (UserConnection userConn) 
         {
@@ -354,98 +357,13 @@ namespace webbAPI.Hubs
         {
             try
             {
-                GetGameAndRound(roomCode, out Game? currentGame, out GameRound? round);
-                currentGame ??= new Game();
-                round ??= new GameRound();
-
-                round.RoundComplete = true;
-
-                var users = _userRepository.GetUsersByRound(round.Id, out string error);
-
-                if (users == null || !string.IsNullOrEmpty(error))
+                var (gameIsFinished, game, round) = await _gameService.EndRound(roomCode, drawingAmmounts);
+                if (gameIsFinished)
                 {
-                    throw new Exception(error);
+                    await Clients.Group(roomCode).SendAsync("GameFinished");  
                 }
-
-                var winner = users?.Find(user => user.Round.GuessedFirst);
-                if (winner != null)
-                {
-                    AddPoints(winner, 5);
-                }
-
-                var allGuessingUsers = users?.FindAll(user => !user.Round.IsDrawing) ?? [];
-                var allCorrectGuessingUsers = allGuessingUsers?.FindAll(user => user.Round.GuessedCorrectly) ?? [];
-                var usersGuessedCorrectlyButNotFirst = allGuessingUsers?.FindAll(user => !user.Round.GuessedFirst && user.Round.GuessedCorrectly) ?? [];
-                
-                if (usersGuessedCorrectlyButNotFirst.Count != 0 || winner != null)
-                {
-                    if (usersGuessedCorrectlyButNotFirst.Count != 0)
-                    {
-                        foreach (var user in usersGuessedCorrectlyButNotFirst)
-                        {
-                            AddPoints(user, 3);
-                        }
-                    }
-                    var artists = users?.FindAll(user => user.Round.IsDrawing) ?? new List<UserVM>();
-
-                    // Give points to artists
-                    foreach (var user in artists)
-                    {
-                        if (drawingAmmounts.Count != 0)
-                        {
-                            if (user.Info.Id == drawingAmmounts.MaxBy(e => e.Value).Key)
-                            {
-                                if (allGuessingUsers?.Count == allCorrectGuessingUsers.Count)
-                                {
-                                    AddPoints(user, 4);
-                                    
-                                } else if (allCorrectGuessingUsers.Count >= 1){
-                                    AddPoints(user, 3);
-                                }
-                            }
-                            else if (user.Info.Id == drawingAmmounts.MinBy(e => e.Value).Key)
-                            {
-                            if (allGuessingUsers?.Count == allCorrectGuessingUsers.Count)
-                                {
-                                    AddPoints(user, 3);
-                                    
-                                } else if (allCorrectGuessingUsers.Count >= 1){
-                                    AddPoints(user, 2);
-                                }
-                            }
-                        }
-                    }
-                    drawingAmmounts.Clear();
-                }
-
-                var affectedRows = _gameRoundRepository.Update(round, out error);
-
-                if (affectedRows == 0 || !string.IsNullOrEmpty(error))
-                {
-                    throw new Exception(error);
-                }
-
-                if (round.RoundNr >= currentGame.Rounds)
-                {
-                    if (users?.Find(u => u.TotalRoundPoints > 0) != null)
-                    {
-                        var allWinners = users?.FindAll(u => u.TotalRoundPoints == users?.MaxBy(c => c?.TotalRoundPoints).TotalRoundPoints) ?? new List<UserVM>();
-                        foreach (var winnerInGame in allWinners)
-                        {
-                            winnerInGame.Info.Wins ++;
-                            affectedRows = _userRepository.UpdateUser(winnerInGame.Info, out error);
-
-                            if (!string.IsNullOrEmpty(error))
-                            {
-                                throw new Exception(error);
-                            }
-                        }
-                    }
-                    await Clients.Group(roomCode).SendAsync("GameFinished");
-                }
-
-                await UsersInRound(round.Id, currentGame.JoinCode);
-                await GameInfo(currentGame.JoinCode);
+                await UsersInRound(round.Id, game.JoinCode);
+                await GameInfo(game.JoinCode);
             }
             catch (Exception ex)
             {
@@ -453,18 +371,7 @@ namespace webbAPI.Hubs
             }
         }
 
-        private void AddPoints(UserVM user, int points)
-        {
-            user.Round.Points = points;
-            user.Info.TotalPoints += points;
-
-            var affectedRows = _userRepository.AddPoints(user, out string error);
-            if (affectedRows == 0 || !string.IsNullOrEmpty(error))
-            {
-                throw new Exception(error);
-            }
-        }
-
+       
         public async Task EndGame() 
         {
             if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? userConn))
