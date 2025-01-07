@@ -24,7 +24,8 @@ const Login = () => {
             onChange={(e) => setPassword(e.target.value)}
             value={password}
           />
-          {/* <button type="submit"> */}
+          {/* <button type="submit" disabled={password === "" || userName == ""}> */}
+
           <Link to={"/home"} className="btn">
             Logga in
           </Link>

@@ -231,7 +231,7 @@ const Home = () => {
             placeholder="Namn på spelrummet"
             onChange={(e) => setRoomName(e.target.value)}
           />
-          <button className="btn" type="submit">
+          <button className="btn" type="submit" disabled={roomName == ""}>
             Skapa rum
           </button>
         </form>
@@ -250,8 +250,10 @@ const Home = () => {
             placeholder="Anslutningskod"
             onChange={(e) => setInviteCode(e.target.value)}
             value={inviteCode}
+            maxLength={8}
+            minLength={8}
           />
-          <button type="submit" className="btn">
+          <button type="submit" className="btn" disabled={inviteCode == ""}>
             Gå med i spel
           </button>
         </form>

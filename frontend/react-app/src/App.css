@@ -21,9 +21,13 @@ body {
   cursor: url("./assets/cursor.svg"), auto;
   height: 100vh;
 }
+button:hover {
+  cursor: pointer;
+}
 
 button:disabled {
-  background-color: #838383;
+  background-color: #b074ff72;
+  cursor: not-allowed;
 }
 
 small span {
