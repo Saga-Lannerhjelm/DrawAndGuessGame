@@ -69,6 +69,8 @@ const Game = () => {
         setGameActive(game.isActive);
         setRoomOwner(game.creatorId);
 
+        console.log("Round:", round);
+
         if (round.id != 0) {
           setRound(round);
 
@@ -170,7 +172,7 @@ const Game = () => {
                 roundData={round}
               />
             )
-          ) : gameActive ? (
+          ) : gameActive && round ? (
             <>
               <TopSection time={time} round={round} roundNr={roundNr} />
               <div id="canvas-container">
