@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
 import { useNavigate } from "react-router-dom";
 import { useConnection } from "../context/ConnectionContext";
-import ErrorMessage from "./ErrorMessage";
+import GameMessage from "./GameMessage";
 
 const Home = () => {
   // const [userName, setUserName] = useState("");
@@ -210,7 +210,7 @@ const Home = () => {
 
   return (
     <>
-      {gameMessage != "" && <ErrorMessage msg={gameMessage} />}
+      {gameMessage != "" && <GameMessage msg={gameMessage} />}
       <h2>Hem</h2>
       <h4>- Skapa ett spel -</h4>
       <div>

@@ -34,8 +34,9 @@ namespace webbAPI.Hubs
                 // Add user (to game)
                 _sharedDB.Connection[Context.ConnectionId] = userConn;
 
-                await Clients.OthersInGroup(userConn.JoinCode).SendAsync("GameStatus", $"{userConn.Username} anslöt till spelet", true);
-                await Clients.Caller.SendAsync("GameStatus", $"Välkommen till spelet!", true);
+                await Clients.Group(userConn.JoinCode).SendAsync("GameStatus", "", true);
+                await Clients.OthersInGroup(userConn.JoinCode).SendAsync("Message", $"{userConn.Username} anslöt till spelet", "info");
+                await Clients.Caller.SendAsync("Message", $"Välkommen till spelet!", "info");
 
                 await UsersInGame(userConn.JoinCode);
                 await GameInfo(userConn.JoinCode);
@@ -79,15 +80,7 @@ namespace webbAPI.Hubs
 
                         // Get word
                         string word = "default word";
-                        try
-                        {
-                            word = await _gameRoundRepository.GetWord();  
-                        }
-                        catch (Exception ex)
-                        {
-                            
-                            Console.WriteLine($"An error occurred: {ex.Message}");
-                        }
+                        word = await _gameRoundRepository.GetWord();  
 
                         // Add a new round
                         var newGameRound = new GameRound {
@@ -143,60 +136,61 @@ namespace webbAPI.Hubs
                                 throw new Exception(error);
                             }
                         }
-                        await Clients.Group(joinCode).SendAsync("GameCanStart", true);
-                        await Clients.Group(joinCode).SendAsync("GameStatus", $"{drawingUserOne.Username} och {drawingUserTwo.Username} ritar!");
+                        await Clients.Group(joinCode).SendAsync("Message", $"{drawingUserOne.Username} och {drawingUserTwo.Username} ritar!", "info");
                         await UsersInRound(roundId, currentGame.JoinCode);
-                        await GameInfo(joinCode);
-                        // currentGame.Rounds[^1].Users.Add(new User{UserDetails = user});
-                        
+                        await GameInfo(joinCode);                     
                     }
                     else {
                          throw new Exception(error);
                     }
-                   
                 }
                 else 
                 {
-                    await Clients.Group(joinCode).SendAsync("GameCanStart", false);
+                    await Clients.Group(joinCode).SendAsync("Message", "Spelet måste ha minst tre spelare", "warning");
                 }
             }
             catch (Exception ex)
             {
-                
-                Console.WriteLine($"An error occurred: {ex.Message}");
+                await Clients.Group(joinCode).SendAsync("Message", $"Ett fel uppstod: {ex.Message}", "warning");
             }
         }
 
         public async Task RequestNewWord (string gameRoom, GameRound round) {
-            string newWord = await _gameRoundRepository.GetWord();
-            round.Word = newWord;
-
-            var users = _userRepository.GetUsersByRound(round.Id, out string error) ?? new List<UserVM>();
-
-            if (users.Count > 0 || string.IsNullOrEmpty(error))
+            try
             {
-                foreach (var user in users)
+                string newWord = await _gameRoundRepository.GetWord();
+                round.Word = newWord;
+
+                var users = _userRepository.GetUsersByRound(round.Id, out string error) ?? new List<UserVM>();
+
+                if (users.Count > 0 || string.IsNullOrEmpty(error))
                 {
-                    if (!user.Round.IsDrawing)
+                    foreach (var user in users)
                     {
-                        user.Round.GuessedCorrectly = false;
-                        user.Round.GuessedFirst = false;
-                        var rows = _userRepository.UpdateUserInRound(user.Round, out error);
-                        
-                        if (!string.IsNullOrEmpty(error) || rows == 0)
+                        if (!user.Round.IsDrawing)
                         {
-                            Console.WriteLine(error);
+                            user.Round.GuessedCorrectly = false;
+                            user.Round.GuessedFirst = false;
+                            var rows = _userRepository.UpdateUserInRound(user.Round, out error);
+                            
+                            if (!string.IsNullOrEmpty(error) || rows == 0)
+                            {
+                                throw new Exception(error);
+                            }
                         }
                     }
-                }
-                var affectedRows = _gameRoundRepository.Update(round, out error);
-                if (string.IsNullOrEmpty(error) || affectedRows != 0)
-                {
-                    await UsersInRound(round.Id, gameRoom);
-                    await GameInfo(gameRoom); 
+                    var affectedRows = _gameRoundRepository.Update(round, out error);
+                    if (string.IsNullOrEmpty(error) || affectedRows != 0)
+                    {
+                        await UsersInRound(round.Id, gameRoom);
+                        await GameInfo(gameRoom); 
+                    }
                 }
             }
-
+            catch (Exception ex)
+            {
+               await Clients.Group(gameRoom).SendAsync("Message", $"Ett fel uppstod: {ex.Message}", "warning");
+            }
         }
 
         public async Task Drawing(Point start, Point end, string color, string gameRoom) 
@@ -268,11 +262,10 @@ namespace webbAPI.Hubs
                     {
                         await Clients.Group(currentGame.JoinCode).SendAsync("ReceiveGuess", guess, userConn.Id);
                     }
-
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Error:", ex);
+                    await Clients.Group(userConn.JoinCode).SendAsync("Message", $"Ett fel uppstod: {ex.Message}", "warning");
                 }
             }
         }
@@ -318,7 +311,7 @@ namespace webbAPI.Hubs
 
             if (users == null || !string.IsNullOrEmpty(error))
             {
-                Console.WriteLine("Errir: ", error);
+                Clients.Group(joinCode).SendAsync("Message", $"Ett fel uppstod: {error}", "warning");
                 return Clients.Group(joinCode).SendAsync("UsersInGame", null);  
             }
             return Clients.Group(joinCode).SendAsync("UsersInGame", users);  
@@ -346,7 +339,7 @@ namespace webbAPI.Hubs
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error:", ex);
+                Clients.Group(joinCode).SendAsync("Message", $"Ett fel uppstod: {ex.Message}", "warning");
             }
 
             return Clients.Group(joinCode).SendAsync("receiveGameInfo", currentGame, currentRound);
@@ -400,7 +393,7 @@ namespace webbAPI.Hubs
                     {
                         if (user.Info.Id == drawingAmmounts.MaxBy(e => e.Value).Key)
                         {
-                            if (allGuessingUsers.Count == allCorrectGuessingUsers.Count)
+                            if (allGuessingUsers?.Count == allCorrectGuessingUsers.Count)
                             {
                                 AddPoints(user, 4);
                                 
@@ -410,7 +403,7 @@ namespace webbAPI.Hubs
                         }
                         else if (user.Info.Id == drawingAmmounts.MinBy(e => e.Value).Key)
                         {
-                           if (allGuessingUsers.Count == allCorrectGuessingUsers.Count)
+                           if (allGuessingUsers?.Count == allCorrectGuessingUsers.Count)
                             {
                                 AddPoints(user, 3);
                                 
@@ -448,13 +441,12 @@ namespace webbAPI.Hubs
                     }
                 }
                 
-            await Clients.Group(roomCode).SendAsync("RoundEnded");
             await UsersInRound(round.Id, currentGame.JoinCode);
             await GameInfo(currentGame.JoinCode);
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                await Clients.Group(roomCode).SendAsync("Message", $"Ett fel uppstod: {ex.Message}", "warning");
             }
         }
 
@@ -502,7 +494,7 @@ namespace webbAPI.Hubs
             if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? userConn))
             {
                 _sharedDB.Connection.Remove(Context.ConnectionId, out _);
-                Clients.Group(userConn.JoinCode).SendAsync("GameStatus", $"{userConn.Username} har lämnat spelet");
+                Clients.Group(userConn.JoinCode).SendAsync("Message", $"{userConn.Username} har lämnat rummet", "info");
 
                 var usersInGame = _sharedDB.Connection.Where(e => e.Value.JoinCode == userConn.JoinCode).ToList();
 
@@ -571,7 +563,7 @@ namespace webbAPI.Hubs
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.Message);
+                    Clients.Group(userConn.JoinCode).SendAsync("Message", $"Ett fel uppstod: {ex.Message}", "warning");
                 }
             }
             return base.OnDisconnectedAsync(exception);

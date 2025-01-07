@@ -10,6 +10,7 @@ import GuessForm from "./GuessForm";
 import DrawingInfo from "./DrawingInfo";
 import TopSection from "./TopSection";
 import ResultCard from "./ResultCard";
+import GameMessage from "../GameMessage";
 
 const Game = () => {
   const { connection, activeUserId, users } = useConnection();
@@ -24,10 +25,17 @@ const Game = () => {
   const [time, setTime] = useState(30);
   const [userGuesses, setUserGuesses] = useState([]);
   const [roundNr, setRoundNr] = useState(3);
+  const [gameMessage, setGameMessage] = useState({});
 
   const navigate = useNavigate();
   const params = useParams();
   const timeOutRef = useRef(null);
+
+  useEffect(() => {
+    setTimeout(() => {
+      setGameMessage("");
+    }, 3000);
+  }, [gameMessage]);
 
   useEffect(() => {
     if (connection === undefined) {
@@ -36,8 +44,8 @@ const Game = () => {
     if (connection) {
       setJoinCode(params.room);
 
-      connection.on("GameCanStart", (canStart) => {
-        // setRound(round + 1);
+      connection.on("Message", (msg, type) => {
+        setGameMessage({ msg: msg, type: type });
       });
 
       connection.on("ReceiveGuess", (guess, userId) => {
@@ -139,6 +147,9 @@ const Game = () => {
 
   return (
     <>
+      {gameMessage != "" && (
+        <GameMessage msg={gameMessage.msg} type={gameMessage.type} />
+      )}
       <Header
         roomName={roomName}
         joinCode={joinCode}
@@ -187,6 +198,7 @@ const Game = () => {
                   type="number"
                   min={3}
                   max={10}
+                  value={roundNr}
                   onChange={(e) => setRoundNr(e.target.value)}
                 />
               </div>

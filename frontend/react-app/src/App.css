@@ -274,6 +274,14 @@ form input {
   width: auto;
 }
 
+.error-container.info {
+  background-color: #8c31c165;
+}
+
+.error-container.warning {
+  background-color: #c1313165;
+}
+
 @media screen and (max-width: 780px) {
   .standard-form {
     max-width: 100%;
