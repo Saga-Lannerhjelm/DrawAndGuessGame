@@ -28,7 +28,14 @@ namespace webbAPI.Repositories
 
                 dbConnection.Open();
 
-                return dbCommand.ExecuteNonQuery();
+                var affectedRows = dbCommand.ExecuteNonQuery();
+
+                if (affectedRows == 0)
+                {
+                    errorMsg = "Inget spel skapades";
+                }
+
+                return affectedRows;
             }
             catch (Exception e)
             {
@@ -51,7 +58,14 @@ namespace webbAPI.Repositories
 
                 dbConnection.Open();
 
-                return dbCommand.ExecuteNonQuery();
+                var affectedRows = dbCommand.ExecuteNonQuery();
+
+                if (affectedRows == 0)
+                {
+                    errorMsg = "Inga rader updaterades. Spelet kanske inte finns";
+                }
+
+                return affectedRows;
             }
             catch (Exception e)
             {
@@ -75,7 +89,14 @@ namespace webbAPI.Repositories
 
                 dbConnection.Open();
 
-                return dbCommand.ExecuteNonQuery();
+                var affectedRows = dbCommand.ExecuteNonQuery();
+
+                if (affectedRows == 0)
+                {
+                    errorMsg = "Inga rader updaterades. Spelet kanske inte finns";
+                }
+
+                return affectedRows;
             }
             catch (Exception e)
             {
@@ -98,7 +119,14 @@ namespace webbAPI.Repositories
 
                 dbConnection.Open();
 
-                return dbCommand.ExecuteNonQuery();
+                var affectedRows = dbCommand.ExecuteNonQuery();
+
+                if (affectedRows == 0)
+                {
+                    errorMsg = "Inga rader togs bort. Id:t kanske inte finns";
+                }
+
+                return affectedRows;
             }
             catch (Exception e)
             {

@@ -57,7 +57,14 @@ namespace webbAPI.Repositories
 
                 dbConnection.Open();
 
-                return dbCommand.ExecuteNonQuery();
+                var affectedRows = dbCommand.ExecuteNonQuery();
+
+                if (affectedRows == 0)
+                {
+                    errorMsg = "Användaren lades inte till";
+                }
+
+                return affectedRows;
             }
             catch (Exception e)
             {
@@ -81,7 +88,14 @@ namespace webbAPI.Repositories
                 dbCommand.Parameters.Add("@id", SqlDbType.Int).Value = user.Id;
                 dbConnection.Open();
 
-                return dbCommand.ExecuteNonQuery();
+                var affectedRows = dbCommand.ExecuteNonQuery();
+
+                if (affectedRows == 0)
+                {
+                    errorMsg = "Inga rader updaterades. Användaren kanske inte finns";
+                }
+
+                return affectedRows;
             }
             catch (Exception e)
             {
@@ -109,7 +123,14 @@ namespace webbAPI.Repositories
 
                 dbConnection.Open();
 
-                return dbCommand.ExecuteNonQuery();
+                var affectedRows = dbCommand.ExecuteNonQuery();
+
+                if (affectedRows == 0)
+                {
+                    errorMsg = "Inga rader updaterades. Användaren kanske inte finns";
+                }
+
+                return affectedRows;
             }
             catch (Exception e)
             {
@@ -136,7 +157,14 @@ namespace webbAPI.Repositories
 
                 dbConnection.Open();
 
-                return dbCommand.ExecuteNonQuery();
+                var affectedRows = dbCommand.ExecuteNonQuery();
+
+                if (affectedRows == 0)
+                {
+                    errorMsg = "Inga poster i databasen uppdaterades bort. Användaren kanske inte finns";
+                }
+
+                return affectedRows;
             }
             catch (Exception e)
             {
@@ -162,7 +190,7 @@ namespace webbAPI.Repositories
 
                 if (rowsAffected == 0)
                 {
-                    errorMsg = "No rows were deleted. The ID might not exist.";
+                    errorMsg = "Inga rader togs bort. Id:t kanske inte finns";
                 }
 
                 return rowsAffected;
