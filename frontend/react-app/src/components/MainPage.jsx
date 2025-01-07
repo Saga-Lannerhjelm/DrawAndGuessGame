@@ -2,14 +2,15 @@ import React, { useEffect, useState } from "react";
 import { HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
 import { useNavigate } from "react-router-dom";
 import { useConnection } from "../context/ConnectionContext";
+import ErrorMessage from "./ErrorMessage";
 
 const Home = () => {
-  const [userName, setUserName] = useState("");
+  // const [userName, setUserName] = useState("");
   const [roomName, setRoomName] = useState("");
   const [randomUsername, setRandomUsername] = useState("");
   const [inviteCode, setInviteCode] = useState("");
-  const [gameStatusSuccess, setGameStatusSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [gameMessage, setGameMessage] = useState("");
 
   const { setConnection, connection, setActiveUserId, setUsers } =
     useConnection();
@@ -17,10 +18,15 @@ const Home = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    getRandomUsername().then((userN) => setRandomUsername(userN));
-  }, []);
+    setTimeout(() => {
+      setGameMessage("");
+    }, 3000);
+  }, [gameMessage]);
 
-  // Also check so that it is unique compared to the existing games in the database
+  useEffect(() => {
+    getRandomUsername().then((userN) => setRandomUsername(userN));
+  }, [gameMessage]);
+
   const createRoom = async (roomName) => {
     const gameRoomCode = Math.round(Math.random() * 100000000);
     let userId;
@@ -68,13 +74,46 @@ const Home = () => {
   const joinExistingRoom = async () => {
     let userId;
     try {
-      userId = await addUser(randomUsername);
+      var { gameExists, error } = await checkIfGameExists();
+      if (gameExists) {
+        userId = await addUser(randomUsername);
+        if (userId) {
+          joinRoom(inviteCode, userId);
+        }
+      } else {
+        if (error) {
+          setGameMessage(error);
+        } else {
+          setGameMessage(
+            "Rummet du försöker ansluta till finns inte, eller så har spelet startat"
+          );
+        }
+      }
     } catch (error) {
       console.error("Kunde inte lägga till användare:", error);
     }
+  };
 
-    if (userId) {
-      joinRoom(inviteCode, userId);
+  const checkIfGameExists = async () => {
+    const response = await fetch("http://localhost:5034/Game/room", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(inviteCode),
+    });
+
+    if (response.ok) {
+      const existingUser = await response.json();
+      return { gameExists: existingUser, error: null };
+    } else {
+      console.error(
+        "Fel vid API-anrop:",
+        response.status,
+        await response.text()
+      );
+      return { gameExists: false, error: "Ett fel inträffade" };
     }
   };
 
@@ -123,12 +162,10 @@ const Home = () => {
         .build();
 
       newConnection.on("GameStatus", (msg, isSuccess) => {
-        console.log(msg);
-        console.log("gameStatus", isSuccess);
-        setGameStatusSuccess(isSuccess);
+        console.log("GameStatus", msg);
+        setGameMessage(msg);
 
         if (isSuccess) {
-          console.log("in success");
           setConnection(newConnection);
           navigate(`/game/${gameRoomCode}`);
         }
@@ -140,7 +177,6 @@ const Home = () => {
 
       newConnection.onclose(() => {
         setConnection();
-        setGameStatusSuccess(false);
         setRoomName("");
       });
 
@@ -174,6 +210,7 @@ const Home = () => {
 
   return (
     <>
+      {gameMessage != "" && <ErrorMessage msg={gameMessage} />}
       <h2>Hem</h2>
       <h4>- Skapa ett spel -</h4>
       <div>

@@ -34,8 +34,8 @@ namespace webbAPI.Hubs
                 // Add user (to game)
                 _sharedDB.Connection[Context.ConnectionId] = userConn;
 
-                 await Clients.OthersInGroup(userConn.JoinCode).SendAsync("GameStatus", $"{userConn.Username} anslöt till spelet", true);
-                await Clients.Caller.SendAsync("GameStatus", $"Välkommen till spelet. Anslutningkoden är {userConn.JoinCode}", true);
+                await Clients.OthersInGroup(userConn.JoinCode).SendAsync("GameStatus", $"{userConn.Username} anslöt till spelet", true);
+                await Clients.Caller.SendAsync("GameStatus", $"Välkommen till spelet!", true);
 
                 await UsersInGame(userConn.JoinCode);
                 await GameInfo(userConn.JoinCode);
