@@ -429,22 +429,23 @@ namespace webbAPI.Hubs
                 {
                     if (users?.Find(u => u.TotalRoundPoints > 0) != null)
                     {
-                        var gameWinner = users?.MaxBy(c => c?.TotalRoundPoints)?.Info ?? new User();
-                        if (gameWinner.Id != 0)
+                        var allWinners = users?.FindAll(u => u.TotalRoundPoints == users?.MaxBy(c => c?.TotalRoundPoints).TotalRoundPoints) ?? new List<UserVM>();
+                        foreach (var winnerInGame in allWinners)
                         {
-                            gameWinner.Wins ++;
-                            affectedRows = _userRepository.UpdateUser(gameWinner, out error);
+                            winnerInGame.Info.Wins ++;
+                            affectedRows = _userRepository.UpdateUser(winnerInGame.Info, out error);
 
-                            if (string.IsNullOrEmpty(error))
+                            if (!string.IsNullOrEmpty(error))
                             {
-                                await Clients.Group(roomCode).SendAsync("GameFinished");
+                                throw new Exception(error);
                             }
                         }
                     }
+                    await Clients.Group(roomCode).SendAsync("GameFinished");
                 }
-                
-            await UsersInRound(round.Id, currentGame.JoinCode);
-            await GameInfo(currentGame.JoinCode);
+
+                await UsersInRound(round.Id, currentGame.JoinCode);
+                await GameInfo(currentGame.JoinCode);
             }
             catch (Exception ex)
             {
