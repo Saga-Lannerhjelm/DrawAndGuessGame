@@ -3,13 +3,12 @@ import { HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
 import { useNavigate } from "react-router-dom";
 import { useConnection } from "../context/ConnectionContext";
 import GameMessage from "./GameMessage";
+import { use } from "react";
 
 const Home = () => {
-  // const [userName, setUserName] = useState("");
   const [roomName, setRoomName] = useState("");
-  const [randomUsername, setRandomUsername] = useState("");
+  const [username, setUsername] = useState("");
   const [inviteCode, setInviteCode] = useState("");
-  const [loading, setLoading] = useState(true);
   const [gameMessage, setGameMessage] = useState("");
 
   const { setConnection, connection, setActiveUserId, setUsers } =
@@ -23,26 +22,25 @@ const Home = () => {
     }, 3000);
   }, [gameMessage]);
 
-  useEffect(() => {
-    getRandomUsername().then((userN) => setRandomUsername(userN));
-  }, [gameMessage]);
-
   const createRoom = async (roomName) => {
     const gameRoomCode = Math.round(Math.random() * 100000000);
-    let userId;
+    let uId;
 
     try {
-      userId = await addUser(randomUsername);
+      var { userId, userNm } = await addUser("test first");
+      uId = userId;
+      console.log("username efter fetch:", userNm);
+      setUsername(userNm);
     } catch (error) {
       console.error("Kunde inte lägga till användare:", error);
     }
 
-    if (userId) {
+    if (uId) {
       const game = {
         RoomName: roomName,
         JoinCode: gameRoomCode.toString(),
         IsActive: false,
-        CreatorId: userId,
+        CreatorId: uId,
       };
 
       try {
@@ -56,7 +54,8 @@ const Home = () => {
         });
 
         if (response.ok) {
-          joinRoom(gameRoomCode, userId);
+          console.log("right before join");
+          joinRoom(gameRoomCode, uId, userNm);
         } else {
           console.error(
             "Fel vid API-anrop:",
@@ -72,13 +71,15 @@ const Home = () => {
   };
 
   const joinExistingRoom = async () => {
-    let userId;
+    let uId;
     try {
       var { gameExists, error } = await checkIfGameExists();
       if (gameExists) {
-        userId = await addUser(randomUsername);
+        var { userId, userNm } = await addUser("test first");
+        uId = userId;
+        setUsername(userNm);
         if (userId) {
-          joinRoom(inviteCode, userId);
+          joinRoom(inviteCode, userId, userNm);
         }
       } else {
         if (error) {
@@ -117,7 +118,7 @@ const Home = () => {
     }
   };
 
-  const addUser = async (userName) => {
+  const addUser = async (username) => {
     console.log("in add");
     try {
       const response = await fetch("http://localhost:5034/User", {
@@ -126,12 +127,12 @@ const Home = () => {
           Accept: "application/json",
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(userName),
+        body: JSON.stringify(username),
       });
 
       if (response.ok) {
         const data = await response.json();
-        return data;
+        return { userId: data.userId, userNm: data.username };
       } else {
         console.error(
           "Fel vid API-anrop:",
@@ -145,15 +146,12 @@ const Home = () => {
     }
   };
 
-  const joinRoom = async (gameRoomCode, userId) => {
-    console.log("USerID in join:", userId);
-    if (!loading) {
-      startConnection(randomUsername, gameRoomCode, userId);
-      setActiveUserId(userId);
-    }
+  const joinRoom = async (gameRoomCode, userId, username) => {
+    startConnection(username, gameRoomCode, userId);
+    setActiveUserId(userId);
   };
 
-  async function startConnection(userName, gameRoomCode, userId) {
+  async function startConnection(name, gameRoomCode, userId) {
     if (!connection) {
       const newConnection = new HubConnectionBuilder()
         .withUrl("http://localhost:5034/draw")
@@ -183,28 +181,15 @@ const Home = () => {
       try {
         await newConnection.start();
         const joinCode = gameRoomCode.toString();
-        newConnection.invoke("JoinGame", { id: userId, userName, joinCode });
+
+        newConnection.invoke("JoinGame", {
+          id: userId,
+          username: name,
+          joinCode,
+        });
       } catch (error) {
         console.error();
       }
-    }
-  }
-
-  async function getRandomUsername() {
-    try {
-      // Link to API https://github.com/randomusernameapi/randomusernameapi.github.io?tab=readme-ov-file
-      const response = await fetch(
-        "https://usernameapiv1.vercel.app/api/random-usernames"
-      );
-
-      if (!response.ok) throw new Error(`Response status: ${response.status}`);
-      const result = await response.json();
-      return result.usernames[0];
-    } catch (error) {
-      console.error(error);
-      return "Anonymous";
-    } finally {
-      setLoading(false);
     }
   }
 

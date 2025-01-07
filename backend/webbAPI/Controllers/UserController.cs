@@ -18,8 +18,12 @@ namespace webbAPI.Controllers
         private readonly UserRepository _userRepository = userRepository;
 
         [HttpPost]
-        public IActionResult AddUser([FromBody] string username)
+        public async Task<IActionResult> AddUser([FromBody]string username)
         {
+            //get random 
+            var randomUsername = await _userRepository.GetRandomUsername();
+            username = randomUsername;
+
             // Check game does not exist
             var user = new User
             {
@@ -29,9 +33,9 @@ namespace webbAPI.Controllers
 
             if (userId == 0 || !string.IsNullOrEmpty(error))
             {
-                return BadRequest();
+                return BadRequest(error);
             }
-            return Ok(userId);
+            return Ok(new {userId, username});
         }
     }
 }
