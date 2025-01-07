@@ -391,30 +391,32 @@ namespace webbAPI.Hubs
                     // Give points to artists
                     foreach (var user in artists)
                     {
-                        if (user.Info.Id == drawingAmmounts.MaxBy(e => e.Value).Key)
+                        if (drawingAmmounts.Count != 0)
                         {
-                            if (allGuessingUsers?.Count == allCorrectGuessingUsers.Count)
+                            if (user.Info.Id == drawingAmmounts.MaxBy(e => e.Value).Key)
                             {
-                                AddPoints(user, 4);
-                                
-                            } else if (allCorrectGuessingUsers.Count >= 1){
-                                AddPoints(user, 3);
+                                if (allGuessingUsers?.Count == allCorrectGuessingUsers.Count)
+                                {
+                                    AddPoints(user, 4);
+                                    
+                                } else if (allCorrectGuessingUsers.Count >= 1){
+                                    AddPoints(user, 3);
+                                }
                             }
-                        }
-                        else if (user.Info.Id == drawingAmmounts.MinBy(e => e.Value).Key)
-                        {
-                           if (allGuessingUsers?.Count == allCorrectGuessingUsers.Count)
+                            else if (user.Info.Id == drawingAmmounts.MinBy(e => e.Value).Key)
                             {
-                                AddPoints(user, 3);
-                                
-                            } else if (allCorrectGuessingUsers.Count >= 1){
-                                AddPoints(user, 2);
+                            if (allGuessingUsers?.Count == allCorrectGuessingUsers.Count)
+                                {
+                                    AddPoints(user, 3);
+                                    
+                                } else if (allCorrectGuessingUsers.Count >= 1){
+                                    AddPoints(user, 2);
+                                }
                             }
                         }
                     }
                     drawingAmmounts.Clear();
                 }
-
 
                 var affectedRows = _gameRoundRepository.Update(round, out error);
 
