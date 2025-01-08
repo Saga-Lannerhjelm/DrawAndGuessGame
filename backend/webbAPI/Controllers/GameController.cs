@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using webbAPI.DataService;
 using webbAPI.Models;
@@ -5,6 +6,7 @@ using webbAPI.Repositories;
 
 namespace webbAPI.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("[controller]")]
 public class GameController : ControllerBase
