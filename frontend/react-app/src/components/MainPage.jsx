@@ -3,6 +3,8 @@ import { HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
 import { useNavigate } from "react-router-dom";
 import { useConnection } from "../context/ConnectionContext";
 import GameMessage from "./GameMessage";
+import Cookies from "js-cookie";
+import { jwtDecode } from "jwt-decode";
 
 const Home = () => {
   // const [userName, setUserName] = useState("");
@@ -29,13 +31,18 @@ const Home = () => {
 
   const createRoom = async (roomName) => {
     const gameRoomCode = Math.round(Math.random() * 100000000);
-    let userId;
+    var jwt = Cookies.get("jwt-cookie");
+    console.log(jwt);
+    var decoded = jwtDecode(jwt);
+    let userId = decoded.id;
+    console.log(userId);
 
-    try {
-      userId = await addUser(randomUsername);
-    } catch (error) {
-      console.error("Kunde inte lägga till användare:", error);
-    }
+    // try {
+    // userId = await addUser(randomUsername);
+    //   userId = "";
+    // } catch (error) {
+    //   console.error("Kunde inte lägga till användare:", error);
+    // }
 
     if (userId) {
       const game = {
@@ -51,12 +58,14 @@ const Home = () => {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: `Bearer  ${jwt}`,
           },
           body: JSON.stringify(game),
+          credentials: "include",
         });
 
         if (response.ok) {
-          joinRoom(gameRoomCode, userId);
+          joinRoom(gameRoomCode, userId, jwt);
         } else {
           console.error(
             "Fel vid API-anrop:",
@@ -76,7 +85,7 @@ const Home = () => {
     try {
       var { gameExists, error } = await checkIfGameExists();
       if (gameExists) {
-        userId = await addUser(randomUsername);
+        // userId = await addUser(randomUsername);
         if (userId) {
           joinRoom(inviteCode, userId);
         }
@@ -117,46 +126,50 @@ const Home = () => {
     }
   };
 
-  const addUser = async (userName) => {
-    console.log("in add");
-    try {
-      const response = await fetch("http://localhost:5034/User", {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(userName),
-      });
+  // const addUser = async (userName) => {
+  //   console.log("in add");
+  //   try {
+  //     const response = await fetch("http://localhost:5034/User", {
+  //       method: "POST",
+  //       headers: {
+  //         Accept: "application/json",
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify(userName),
+  //     });
 
-      if (response.ok) {
-        const data = await response.json();
-        return data;
-      } else {
-        console.error(
-          "Fel vid API-anrop:",
-          response.status,
-          await response.text()
-        );
-        throw new Error("API-anrop misslyckades");
-      }
-    } catch (error) {
-      console.error("Ett fel inträffade:", error);
-    }
-  };
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       return data;
+  //     } else {
+  //       console.error(
+  //         "Fel vid API-anrop:",
+  //         response.status,
+  //         await response.text()
+  //       );
+  //       throw new Error("API-anrop misslyckades");
+  //     }
+  //   } catch (error) {
+  //     console.error("Ett fel inträffade:", error);
+  //   }
+  // };
 
-  const joinRoom = async (gameRoomCode, userId) => {
+  const joinRoom = async (gameRoomCode, userId, jwt) => {
     console.log("USerID in join:", userId);
     if (!loading) {
-      startConnection(randomUsername, gameRoomCode, userId);
+      startConnection(randomUsername, gameRoomCode, userId, jwt);
       setActiveUserId(userId);
     }
   };
 
-  async function startConnection(userName, gameRoomCode, userId) {
+  async function startConnection(userName, gameRoomCode, userId, jwt) {
     if (!connection) {
+      console.log("in start conn");
       const newConnection = new HubConnectionBuilder()
-        .withUrl("http://localhost:5034/draw")
+        .withUrl("http://localhost:5034/draw", {
+          accessTokenFactory: () => jwt,
+        })
+
         .configureLogging(LogLevel.Information)
         .withAutomaticReconnect()
         .build();
