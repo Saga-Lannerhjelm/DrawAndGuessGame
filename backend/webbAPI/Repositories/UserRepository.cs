@@ -160,11 +160,6 @@ namespace webbAPI.Repositories
 
                 var affectedRows = dbCommand.ExecuteNonQuery();
 
-                if (affectedRows == 0)
-                {
-                    errorMsg = "Inga poster i databasen uppdaterades bort. Användaren kanske inte finns";
-                }
-
                 return affectedRows;
             }
             catch (Exception e)
@@ -245,6 +240,44 @@ namespace webbAPI.Repositories
                 }
 
                 return users;
+            }
+            catch (Exception e)
+            {
+                errorMsg = e.Message;
+                return null;
+            }
+        }
+
+        public UserInRound? GetUser (int id, out string errorMsg) 
+        {
+            string query = "SELECT * FROM user_in_round WHERE user_id = @id";
+            errorMsg = "";
+
+            using SqlConnection dbConnection = new(_connectionString);
+            try
+            {
+                var dbCommand = new SqlCommand(query, dbConnection);
+                dbCommand.Parameters.Add("@id", SqlDbType.Int).Value = id;
+
+                dbConnection.Open();
+
+                SqlDataReader reader = dbCommand.ExecuteReader();
+                var user = new UserInRound();
+
+                while (reader.Read())
+                {
+                    user = new UserInRound{
+                        Id = (int)reader["userInRoundId"],
+                        IsDrawing = (byte)reader["is_drawing"] == 1,
+                        Points = (int)reader["points"],
+                        GuessedCorrectly = (byte)reader["guessed_correctly"] == 1,
+                        GuessedFirst = (byte)reader["guessed_first"] == 1,
+                        UserId = (int)reader["user_id"],
+                        GameRoundId = (int)reader["game_round_id"],
+                    };
+                }
+
+                return user;
             }
             catch (Exception e)
             {
