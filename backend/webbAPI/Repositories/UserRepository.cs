@@ -14,32 +14,6 @@ namespace webbAPI.Repositories
     {
         private readonly string? _connectionString = configuration.GetConnectionString("DefaultConnection");
         
-        public int Insert(User user, out string errorMsg) 
-        {
-            string query = "INSERT INTO users (username, total_points, wins) VALUES (@username, @totalPoints, @wins); SELECT SCOPE_IDENTITY() AS id;";
-            errorMsg = "";
-
-            using SqlConnection dbConnection = new(_connectionString);
-            try
-            {
-                var dbCommand = new SqlCommand(query, dbConnection);
-                dbCommand.Parameters.Add("@username", SqlDbType.VarChar, 50).Value = user.Username;
-                dbCommand.Parameters.Add("@totalPoints", SqlDbType.Int).Value = user.TotalPoints;
-                dbCommand.Parameters.Add("@wins", SqlDbType.Int).Value = user.Wins;
-
-                dbConnection.Open();
-
-                int insertedId = Convert.ToInt16(dbCommand.ExecuteScalar());
-
-                return insertedId;
-            }
-            catch (Exception e)
-            {
-                errorMsg = e.Message;
-                return 0;
-            }
-        }
-
         public int InsertUserInRound(UserInRound user, out string errorMsg) 
         {
             string query = "INSERT INTO user_in_round (is_drawing, points, guessed_correctly, guessed_first, user_id, game_round_id) VALUES (@isDrawing, @points, @guessedCorrectly, @guessedFirst, @userId, @gameRoundId);";
@@ -306,6 +280,38 @@ namespace webbAPI.Repositories
         public class RandomUsernameResponse
         {
             public string?[] Usernames { get; set; }
+        }
+        public List<User> GetAllUsers (out string errorMsg) 
+        {
+            string query = "SELECT * FROM users ORDER BY wins DESC, total_points DESC;";
+            errorMsg = "";
+
+            using SqlConnection dbConnection = new(_connectionString);
+            try
+            {
+                var dbCommand = new SqlCommand(query, dbConnection);
+                dbConnection.Open();
+
+                SqlDataReader reader = dbCommand.ExecuteReader();
+                var users = new List<User>();
+
+                while (reader.Read())
+                {
+                    users.Add(new User{
+                        Id = (int)reader["id"],
+                        Username = reader["username"].ToString() ?? "",
+                        TotalPoints = (int)reader["total_points"],
+                        Wins = (int)reader["wins"],
+                    });
+                }
+
+                return users;
+            }
+            catch (Exception e)
+            {
+                errorMsg = e.Message;
+                return [];
+            }
         }
     }
 }

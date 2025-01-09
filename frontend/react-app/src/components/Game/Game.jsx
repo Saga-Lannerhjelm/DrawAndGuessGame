@@ -39,7 +39,7 @@ const Game = () => {
 
   useEffect(() => {
     if (connection === undefined) {
-      navigate("/home");
+      navigate("/");
     }
     if (connection) {
       setJoinCode(params.room);
@@ -121,7 +121,7 @@ const Game = () => {
 
   const leaveRoom = async () => {
     await connection.stop();
-    navigate("/home");
+    navigate("/");
   };
 
   const startRound = async (roundNr) => {

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using webbAPI.DataService;
@@ -25,13 +26,14 @@ namespace webbAPI.Controllers
             username = randomUsername;
 
             // Check game does not exist
-            var user = new User
-            {
-                Username = username
-            };
-            int userId = _userRepository.Insert(user, out string error);
+            var users = _userRepository.GetAllUsers(out string error);
 
-            if (userId == 0 || !string.IsNullOrEmpty(error))
+            if (!string.IsNullOrEmpty(error))
+            {
+                return BadRequest(error);
+            }
+
+            if (users.Count == 0)
             {
                 return BadRequest(error);
             }

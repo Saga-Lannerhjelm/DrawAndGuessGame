@@ -4,14 +4,17 @@ import { useNavigate } from "react-router-dom";
 import { useConnection } from "../context/ConnectionContext";
 import GameMessage from "./GameMessage";
 import { use } from "react";
+import Cookies from "js-cookie";
+import { jwtDecode } from "jwt-decode";
 
 const Home = () => {
+  const [userName, setUserName] = useState("");
   const [roomName, setRoomName] = useState("");
-  const [username, setUsername] = useState("");
+  // const [randomUsername, setRandomUsername] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [gameMessage, setGameMessage] = useState("");
 
-  const { setConnection, connection, setActiveUserId, setUsers } =
+  const { setConnection, connection, setActiveUserId, setUsers, jwt } =
     useConnection();
 
   const navigate = useNavigate();
@@ -22,20 +25,24 @@ const Home = () => {
     }, 3000);
   }, [gameMessage]);
 
+  useEffect(() => {
+    if (jwt) {
+      const decoded = jwtDecode(jwt);
+      setUserName(decoded.name);
+    } else {
+      if (connection) {
+        connection.stop();
+        setConnection();
+      }
+      navigate("/login");
+    }
+  }, [jwt]);
+
   const createRoom = async (roomName) => {
     const gameRoomCode = Math.round(Math.random() * 100000000);
-    let uId;
+    var { userId, jwtValue, username } = getValuesFromToken();
 
-    try {
-      var { userId, userNm } = await addUser("test first");
-      uId = userId;
-      console.log("username efter fetch:", userNm);
-      setUsername(userNm);
-    } catch (error) {
-      console.error("Kunde inte lägga till användare:", error);
-    }
-
-    if (uId) {
+    if (jwtValue) {
       const game = {
         RoomName: roomName,
         JoinCode: gameRoomCode.toString(),
@@ -49,13 +56,16 @@ const Home = () => {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+            Authorization: `Bearer  ${jwt}`,
           },
           body: JSON.stringify(game),
+          credentials: "include",
         });
 
         if (response.ok) {
-          console.log("right before join");
-          joinRoom(gameRoomCode, uId, userNm);
+          joinRoom(gameRoomCode, userId, jwt, username);
+        } else if (response.status === 401) {
+          navigate("/login");
         } else {
           console.error(
             "Fel vid API-anrop:",
@@ -71,15 +81,14 @@ const Home = () => {
   };
 
   const joinExistingRoom = async () => {
-    let uId;
     try {
-      var { gameExists, error } = await checkIfGameExists();
+      var { gameExists, error } = await checkIfGameExists(jwt);
+
       if (gameExists) {
-        var { userId, userNm } = await addUser("test first");
-        uId = userId;
-        setUsername(userNm);
-        if (userId) {
-          joinRoom(inviteCode, userId, userNm);
+        var { userId, jwtValue, username } = getValuesFromToken();
+
+        if (jwtValue) {
+          joinRoom(inviteCode, userId, jwt, username);
         }
       } else {
         if (error) {
@@ -95,12 +104,13 @@ const Home = () => {
     }
   };
 
-  const checkIfGameExists = async () => {
+  const checkIfGameExists = async (jwt) => {
     const response = await fetch("http://localhost:5034/Game/room", {
       method: "POST",
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
+        Authorization: `Bearer  ${jwt}`,
       },
       body: JSON.stringify(inviteCode),
     });
@@ -108,6 +118,8 @@ const Home = () => {
     if (response.ok) {
       const existingUser = await response.json();
       return { gameExists: existingUser, error: null };
+    } else if (response.status === 401) {
+      navigate("/login");
     } else {
       console.error(
         "Fel vid API-anrop:",
@@ -118,43 +130,35 @@ const Home = () => {
     }
   };
 
-  const addUser = async (username) => {
-    console.log("in add");
-    try {
-      const response = await fetch("http://localhost:5034/User", {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(username),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        return { userId: data.userId, userNm: data.username };
-      } else {
-        console.error(
-          "Fel vid API-anrop:",
-          response.status,
-          await response.text()
-        );
-        throw new Error("API-anrop misslyckades");
-      }
-    } catch (error) {
-      console.error("Ett fel inträffade:", error);
+  function getValuesFromToken() {
+    // const jwtValue = Cookies.get("jwt-cookie");
+    const jwtValue = jwt;
+    let userId;
+    let username;
+    if (jwt) {
+      const decoded = jwtDecode(jwt);
+      userId = parseInt(decoded.id);
+      username = decoded.name;
     }
-  };
+    return { userId, jwtValue, username };
+  }
 
-  const joinRoom = async (gameRoomCode, userId, username) => {
-    startConnection(username, gameRoomCode, userId);
+  const joinRoom = async (gameRoomCode, userId, jwt, username) => {
+    console.log("USerID in join:", userId);
+    console.log("username in join:", username);
+    // if (!loading) {
+    startConnection(gameRoomCode, userId, jwt, username);
     setActiveUserId(userId);
+    // }
   };
 
-  async function startConnection(name, gameRoomCode, userId) {
+  async function startConnection(gameRoomCode, userId, jwt, user) {
     if (!connection) {
+      console.log("in start conn");
       const newConnection = new HubConnectionBuilder()
-        .withUrl("http://localhost:5034/draw")
+        .withUrl("http://localhost:5034/draw", {
+          accessTokenFactory: () => jwt,
+        })
         .configureLogging(LogLevel.Information)
         .withAutomaticReconnect()
         .build();
@@ -181,10 +185,10 @@ const Home = () => {
       try {
         await newConnection.start();
         const joinCode = gameRoomCode.toString();
-
+        console.log(userId, user, joinCode);
         newConnection.invoke("JoinGame", {
           id: userId,
-          username: name,
+          username: user,
           joinCode,
         });
       } catch (error) {
@@ -196,7 +200,7 @@ const Home = () => {
   return (
     <>
       {gameMessage != "" && <GameMessage msg={gameMessage} />}
-      <h2>Hem</h2>
+      <h2>Välkommen {userName}</h2>
       <h4>- Skapa ett spel -</h4>
       <div>
         <form
@@ -206,11 +210,6 @@ const Home = () => {
             createRoom(roomName);
           }}
         >
-          {/* <input
-            type="text"
-            placeholder="Användarnamn"
-            onChange={(e) => setUserName(e.target.value)}
-          /> */}
           <input
             type="text"
             placeholder="Namn på spelrummet"

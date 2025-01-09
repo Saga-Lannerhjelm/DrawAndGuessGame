@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 using webbAPI.DataService;
@@ -8,6 +9,7 @@ using webbAPI.Services;
 
 namespace webbAPI.Hubs
 {
+    [Authorize]
     public class DrawHub : Hub
     {   
         private readonly SharedDB _sharedDB;

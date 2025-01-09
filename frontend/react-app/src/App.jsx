@@ -7,16 +7,22 @@ import Home from "./components/MainPage";
 import Login from "./components/Login";
 import Game from "./components/Game/Game";
 import { ConnectionProvider } from "./context/ConnectionContext";
+import Highscore from "./components/highscore/highscore";
+import NavBar from "./components/Navbar";
 
 function App() {
   return (
-    <ConnectionProvider>
-      <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/game/:room" element={<Game />} />
-      </Routes>
-    </ConnectionProvider>
+    <>
+      <ConnectionProvider>
+        <NavBar />
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<Home />} />
+          <Route path="/highscore" element={<Highscore />} />
+          <Route path="/game/:room" element={<Game />} />
+        </Routes>
+      </ConnectionProvider>
+    </>
   );
 }
 
