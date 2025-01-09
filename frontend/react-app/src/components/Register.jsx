@@ -2,18 +2,18 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import { useConnection } from "../context/ConnectionContext";
+import RedoIcon from "../assets/RedoIcon";
 
-const Login = () => {
+const Register = () => {
   const [username, setUserName] = useState("");
   const [password, setPassword] = useState("");
   const [submitError, setSubmitError] = useState("");
 
   const navigate = useNavigate();
-  const { setJwt } = useConnection();
 
-  const login = async (username, password) => {
+  const register = async (username, password) => {
     try {
-      const response = await fetch("http://localhost:5034/Account/login", {
+      const response = await fetch("http://localhost:5034/Account/register", {
         method: "POST",
         headers: {
           Accept: "application/json",
@@ -26,10 +26,7 @@ const Login = () => {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setJwt(data);
-        // Cookies.set("jwt-cookie", data);
-        navigate("/");
+        navigate("/login");
       }
 
       if (!response.ok) {
@@ -44,29 +41,57 @@ const Login = () => {
       setSubmitError(error);
     }
   };
+
+  const getRandomUsername = async () => {
+    try {
+      // Link to API https://github.com/randomusernameapi/randomusernameapi.github.io?tab=readme-ov-file
+      const response = await fetch(
+        "https://usernameapiv1.vercel.app/api/random-usernames"
+      );
+
+      if (!response.ok) throw new Error(`Response status: ${response.status}`);
+      const result = await response.json();
+      return result.usernames[0];
+    } catch (error) {
+      console.error(error);
+      return "Anonymous";
+    } finally {
+      // setLoading(false);
+    }
+  };
+
+  const useRandomUsername = async () => {
+    console.log("in get");
+    let userN = await getRandomUsername();
+    userN = userN.substring(0, userN.length - 1);
+    setUserName(userN);
+  };
+
   return (
     <>
-      <h2 style={{ marginBottom: "0" }}>Välkommen till DuoSkiss</h2>
-      <h4 style={{ marginTop: "0" }}>
-        - Logga in eller registrera dig för att fortsätta -
-      </h4>
+      <h4 style={{ marginBottom: "0" }}>Registrera dig</h4>
       <div>
         <form
           className="standard-form"
           onSubmit={(e) => {
             e.preventDefault();
-            login(username, password);
+            register(username, password);
           }}
         >
-          <input
-            type="text"
-            placeholder="Användarnamn"
-            onChange={(e) => {
-              setUserName(e.target.value);
-              setSubmitError("");
-            }}
-            value={username}
-          />
+          <div className="register-user-input">
+            <input
+              type="text"
+              placeholder="Användarnamn"
+              onChange={(e) => {
+                setUserName(e.target.value);
+                setSubmitError("");
+              }}
+              value={username}
+            />
+            <div onClick={() => useRandomUsername()}>
+              <RedoIcon />
+            </div>
+          </div>
           <input
             type="text"
             placeholder="Lösenord"
@@ -88,14 +113,15 @@ const Login = () => {
           >
             Logga in
           </button>
-          <small>
-            Har du inget konto?{" "}
-            <span onClick={() => navigate("/register")}>Registrera dig!</span>
-          </small>
+          <Link to="/register">
+            <small>
+              Har du inget konto? <span>Registrera dig!</span>
+            </small>
+          </Link>
         </form>
       </div>
     </>
   );
 };
 
-export default Login;
+export default Register;
