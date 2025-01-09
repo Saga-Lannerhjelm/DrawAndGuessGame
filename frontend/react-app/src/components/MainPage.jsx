@@ -25,9 +25,14 @@ const Home = () => {
     }, 3000);
   }, [gameMessage]);
 
-  // useEffect(() => {
-  //   getRandomUsername().then((userN) => setRandomUsername(userN));
-  // }, [gameMessage]);
+  useEffect(() => {
+    if (jwt) {
+      const decoded = jwtDecode(jwt);
+      setUserName(decoded.name);
+    } else {
+      navigate("/");
+    }
+  }, [jwt]);
 
   const createRoom = async (roomName) => {
     const gameRoomCode = Math.round(Math.random() * 100000000);
@@ -55,6 +60,8 @@ const Home = () => {
 
         if (response.ok) {
           joinRoom(gameRoomCode, userId, jwt, username);
+        } else if (response.status === 401) {
+          navigate("/");
         } else {
           console.error(
             "Fel vid API-anrop:",
@@ -107,6 +114,8 @@ const Home = () => {
     if (response.ok) {
       const existingUser = await response.json();
       return { gameExists: existingUser, error: null };
+    } else if (response.status === 401) {
+      navigate("/");
     } else {
       console.error(
         "Fel vid API-anrop:",
@@ -129,34 +138,6 @@ const Home = () => {
     }
     return { userId, jwtValue, username };
   }
-
-  // const addUser = async (userName) => {
-  //   console.log("in add");
-  //   try {
-  //     const response = await fetch("http://localhost:5034/User", {
-  //       method: "POST",
-  //       headers: {
-  //         Accept: "application/json",
-  //         "Content-Type": "application/json",
-  //       },
-  //       body: JSON.stringify(userName),
-  //     });
-
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       return data;
-  //     } else {
-  //       console.error(
-  //         "Fel vid API-anrop:",
-  //         response.status,
-  //         await response.text()
-  //       );
-  //       throw new Error("API-anrop misslyckades");
-  //     }
-  //   } catch (error) {
-  //     console.error("Ett fel inträffade:", error);
-  //   }
-  // };
 
   const joinRoom = async (gameRoomCode, userId, jwt, username) => {
     console.log("USerID in join:", userId);
@@ -201,12 +182,15 @@ const Home = () => {
         await newConnection.start();
         const joinCode = gameRoomCode.toString();
         console.log(userId, user, joinCode);
-        newConnection
-          .invoke("JoinGame", { id: userId, username: user, joinCode })
-          .then((test) => console.log(test))
-          .catch((error) => console.log(error));
+        newConnection.invoke("JoinGame", {
+          id: userId,
+          username: user,
+          joinCode,
+        });
       } catch (error) {
-        console.error();
+        if (error.message.includes("401")) {
+          navigate("/");
+        }
       }
     }
   }
@@ -232,7 +216,7 @@ const Home = () => {
   return (
     <>
       {gameMessage != "" && <GameMessage msg={gameMessage} />}
-      <h2>Hem</h2>
+      <h2>Välkommen {userName}</h2>
       <h4>- Skapa ett spel -</h4>
       <div>
         <form
@@ -242,11 +226,6 @@ const Home = () => {
             createRoom(roomName);
           }}
         >
-          {/* <input
-            type="text"
-            placeholder="Användarnamn"
-            onChange={(e) => setUserName(e.target.value)}
-          /> */}
           <input
             type="text"
             placeholder="Namn på spelrummet"
