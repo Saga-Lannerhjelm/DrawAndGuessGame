@@ -13,32 +13,6 @@ namespace webbAPI.Repositories
     {
         private readonly string? _connectionString = configuration.GetConnectionString("DefaultConnection");
         
-        public int Insert(User user, out string errorMsg) 
-        {
-            string query = "INSERT INTO users (username, total_points, wins) VALUES (@username, @totalPoints, @wins); SELECT SCOPE_IDENTITY() AS id;";
-            errorMsg = "";
-
-            using SqlConnection dbConnection = new(_connectionString);
-            try
-            {
-                var dbCommand = new SqlCommand(query, dbConnection);
-                dbCommand.Parameters.Add("@username", SqlDbType.VarChar, 50).Value = user.Username;
-                dbCommand.Parameters.Add("@totalPoints", SqlDbType.Int).Value = user.TotalPoints;
-                dbCommand.Parameters.Add("@wins", SqlDbType.Int).Value = user.Wins;
-
-                dbConnection.Open();
-
-                int insertedId = Convert.ToInt16(dbCommand.ExecuteScalar());
-
-                return insertedId;
-            }
-            catch (Exception e)
-            {
-                errorMsg = e.Message;
-                return 0;
-            }
-        }
-
         public int InsertUserInRound(UserInRound user, out string errorMsg) 
         {
             string query = "INSERT INTO user_in_round (is_drawing, points, guessed_correctly, guessed_first, user_id, game_round_id) VALUES (@isDrawing, @points, @guessedCorrectly, @guessedFirst, @userId, @gameRoundId);";
@@ -57,7 +31,14 @@ namespace webbAPI.Repositories
 
                 dbConnection.Open();
 
-                return dbCommand.ExecuteNonQuery();
+                var affectedRows = dbCommand.ExecuteNonQuery();
+
+                if (affectedRows == 0)
+                {
+                    errorMsg = "Användaren lades inte till";
+                }
+
+                return affectedRows;
             }
             catch (Exception e)
             {
@@ -81,7 +62,14 @@ namespace webbAPI.Repositories
                 dbCommand.Parameters.Add("@id", SqlDbType.Int).Value = user.Id;
                 dbConnection.Open();
 
-                return dbCommand.ExecuteNonQuery();
+                var affectedRows = dbCommand.ExecuteNonQuery();
+
+                if (affectedRows == 0)
+                {
+                    errorMsg = "Inga rader updaterades. Användaren kanske inte finns";
+                }
+
+                return affectedRows;
             }
             catch (Exception e)
             {
@@ -109,7 +97,14 @@ namespace webbAPI.Repositories
 
                 dbConnection.Open();
 
-                return dbCommand.ExecuteNonQuery();
+                var affectedRows = dbCommand.ExecuteNonQuery();
+
+                if (affectedRows == 0)
+                {
+                    errorMsg = "Inga rader updaterades. Användaren kanske inte finns";
+                }
+
+                return affectedRows;
             }
             catch (Exception e)
             {
@@ -136,7 +131,14 @@ namespace webbAPI.Repositories
 
                 dbConnection.Open();
 
-                return dbCommand.ExecuteNonQuery();
+                var affectedRows = dbCommand.ExecuteNonQuery();
+
+                if (affectedRows == 0)
+                {
+                    errorMsg = "Inga poster i databasen uppdaterades bort. Användaren kanske inte finns";
+                }
+
+                return affectedRows;
             }
             catch (Exception e)
             {
@@ -162,7 +164,7 @@ namespace webbAPI.Repositories
 
                 if (rowsAffected == 0)
                 {
-                    errorMsg = "No rows were deleted. The ID might not exist.";
+                    errorMsg = "Inga rader togs bort. Id:t kanske inte finns";
                 }
 
                 return rowsAffected;

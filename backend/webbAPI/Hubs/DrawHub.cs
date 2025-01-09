@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 using webbAPI.DataService;
@@ -7,6 +8,7 @@ using webbAPI.Repositories;
 
 namespace webbAPI.Hubs
 {
+    [Authorize]
     public class DrawHub : Hub
     {   
         private readonly SharedDB _sharedDB;
@@ -34,8 +36,9 @@ namespace webbAPI.Hubs
                 // Add user (to game)
                 _sharedDB.Connection[Context.ConnectionId] = userConn;
 
-                 await Clients.OthersInGroup(userConn.JoinCode).SendAsync("GameStatus", $"{userConn.Username} anslöt till spelet", true);
-                await Clients.Caller.SendAsync("GameStatus", $"Välkommen till spelet. Anslutningkoden är {userConn.JoinCode}", true);
+                await Clients.Group(userConn.JoinCode).SendAsync("GameStatus", "", true);
+                await Clients.OthersInGroup(userConn.JoinCode).SendAsync("Message", $"{userConn.Username} anslöt till spelet", "info");
+                await Clients.Caller.SendAsync("Message", $"Välkommen till spelet!", "info");
 
                 await UsersInGame(userConn.JoinCode);
                 await GameInfo(userConn.JoinCode);
@@ -46,7 +49,7 @@ namespace webbAPI.Hubs
             }
         }
 
-        public async Task StartRound(string joinCode)
+        public async Task StartRound(string joinCode, int roundNr)
         {
             var allUsersInGame = _sharedDB.Connection.Values
             .Where(g => g.JoinCode == joinCode).ToList();
@@ -67,26 +70,19 @@ namespace webbAPI.Hubs
                         if (!currentGame.IsActive)
                         {
                             // Update gamestate to active
-                            var affectedRows = _gameRepository.UpdateActiveState(currentGame.Id, true, out error);
+                            currentGame.IsActive = true;
+                            currentGame.Rounds = roundNr;
+                            var affectedRows = _gameRepository.UpdateGame(currentGame, out error);
 
                             if (affectedRows == 0 || !string.IsNullOrEmpty(error))
                             {
                                 throw new Exception(error);
                             }
-                            currentGame.IsActive = true;
                         }
 
                         // Get word
                         string word = "default word";
-                        try
-                        {
-                            word = await GetWord();  
-                        }
-                        catch (Exception ex)
-                        {
-                            
-                            Console.WriteLine($"An error occurred: {ex.Message}");
-                        }
+                        word = await _gameRoundRepository.GetWord();  
 
                         // Add a new round
                         var newGameRound = new GameRound {
@@ -142,45 +138,63 @@ namespace webbAPI.Hubs
                                 throw new Exception(error);
                             }
                         }
-                        await Clients.Group(joinCode).SendAsync("GameCanStart", true);
-                        await Clients.Group(joinCode).SendAsync("GameStatus", $"{drawingUserOne.Username} och {drawingUserTwo.Username} ritar!");
+                        await Clients.Group(joinCode).SendAsync("Message", $"{drawingUserOne.Username} och {drawingUserTwo.Username} ritar!", "info");
                         await UsersInRound(roundId, currentGame.JoinCode);
-                        await GameInfo(joinCode);
-                        // currentGame.Rounds[^1].Users.Add(new User{UserDetails = user});
-                        
+                        await GameInfo(joinCode);                     
                     }
                     else {
                          throw new Exception(error);
                     }
-                   
                 }
                 else 
                 {
-                    await Clients.Group(joinCode).SendAsync("GameCanStart", false);
+                    await Clients.Group(joinCode).SendAsync("Message", "Spelet måste ha minst tre spelare", "warning");
                 }
             }
             catch (Exception ex)
             {
-                
-                Console.WriteLine($"An error occurred: {ex.Message}");
+                await Clients.Group(joinCode).SendAsync("Message", $"Ett fel uppstod: {ex.Message}", "warning");
             }
         }
 
-        public async Task<string> GetWord () 
-        {
-            // Link to API https://random-word-form.herokuapp.com
-            HttpClient client = new();
-            HttpResponseMessage response = await client.GetAsync("https://random-word-form.herokuapp.com/random/noun");
-
-            if (response.IsSuccessStatusCode)
+        public async Task RequestNewWord (string gameRoom, GameRound round) {
+            try
             {
-                string apiResp = await response.Content.ReadAsStringAsync();
-                string[] words = JsonConvert.DeserializeObject<string[]>(apiResp) ?? [];
-                return (words?.Length > 0) ? words[0] : "default word";
-            } else {
-                return "Default word";
+                string newWord = await _gameRoundRepository.GetWord();
+                round.Word = newWord;
+
+                var users = _userRepository.GetUsersByRound(round.Id, out string error) ?? new List<UserVM>();
+
+                if (users.Count > 0 || string.IsNullOrEmpty(error))
+                {
+                    foreach (var user in users)
+                    {
+                        if (!user.Round.IsDrawing)
+                        {
+                            user.Round.GuessedCorrectly = false;
+                            user.Round.GuessedFirst = false;
+                            var rows = _userRepository.UpdateUserInRound(user.Round, out error);
+                            
+                            if (!string.IsNullOrEmpty(error) || rows == 0)
+                            {
+                                throw new Exception(error);
+                            }
+                        }
+                    }
+                    var affectedRows = _gameRoundRepository.Update(round, out error);
+                    if (string.IsNullOrEmpty(error) || affectedRows != 0)
+                    {
+                        await UsersInRound(round.Id, gameRoom);
+                        await GameInfo(gameRoom); 
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+               await Clients.Group(gameRoom).SendAsync("Message", $"Ett fel uppstod: {ex.Message}", "warning");
             }
         }
+
         public async Task Drawing(Point start, Point end, string color, string gameRoom) 
         {
             if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? userConn))
@@ -250,11 +264,10 @@ namespace webbAPI.Hubs
                     {
                         await Clients.Group(currentGame.JoinCode).SendAsync("ReceiveGuess", guess, userConn.Id);
                     }
-
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Error:", ex);
+                    await Clients.Group(userConn.JoinCode).SendAsync("Message", $"Ett fel uppstod: {ex.Message}", "warning");
                 }
             }
         }
@@ -300,7 +313,7 @@ namespace webbAPI.Hubs
 
             if (users == null || !string.IsNullOrEmpty(error))
             {
-                Console.WriteLine("Errir: ", error);
+                Clients.Group(joinCode).SendAsync("Message", $"Ett fel uppstod: {error}", "warning");
                 return Clients.Group(joinCode).SendAsync("UsersInGame", null);  
             }
             return Clients.Group(joinCode).SendAsync("UsersInGame", users);  
@@ -328,7 +341,7 @@ namespace webbAPI.Hubs
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error:", ex);
+                Clients.Group(joinCode).SendAsync("Message", $"Ett fel uppstod: {ex.Message}", "warning");
             }
 
             return Clients.Group(joinCode).SendAsync("receiveGameInfo", currentGame, currentRound);
@@ -380,30 +393,32 @@ namespace webbAPI.Hubs
                     // Give points to artists
                     foreach (var user in artists)
                     {
-                        if (user.Info.Id == drawingAmmounts.MaxBy(e => e.Value).Key)
+                        if (drawingAmmounts.Count != 0)
                         {
-                            if (allGuessingUsers.Count == allCorrectGuessingUsers.Count)
+                            if (user.Info.Id == drawingAmmounts.MaxBy(e => e.Value).Key)
                             {
-                                AddPoints(user, 4);
-                                
-                            } else if (allCorrectGuessingUsers.Count >= 1){
-                                AddPoints(user, 3);
+                                if (allGuessingUsers?.Count == allCorrectGuessingUsers.Count)
+                                {
+                                    AddPoints(user, 4);
+                                    
+                                } else if (allCorrectGuessingUsers.Count >= 1){
+                                    AddPoints(user, 3);
+                                }
                             }
-                        }
-                        else if (user.Info.Id == drawingAmmounts.MinBy(e => e.Value).Key)
-                        {
-                           if (allGuessingUsers.Count == allCorrectGuessingUsers.Count)
+                            else if (user.Info.Id == drawingAmmounts.MinBy(e => e.Value).Key)
                             {
-                                AddPoints(user, 3);
-                                
-                            } else if (allCorrectGuessingUsers.Count >= 1){
-                                AddPoints(user, 2);
+                            if (allGuessingUsers?.Count == allCorrectGuessingUsers.Count)
+                                {
+                                    AddPoints(user, 3);
+                                    
+                                } else if (allCorrectGuessingUsers.Count >= 1){
+                                    AddPoints(user, 2);
+                                }
                             }
                         }
                     }
                     drawingAmmounts.Clear();
                 }
-
 
                 var affectedRows = _gameRoundRepository.Update(round, out error);
 
@@ -412,28 +427,31 @@ namespace webbAPI.Hubs
                     throw new Exception(error);
                 }
 
-                if (round.RoundNr >= 3)
+                if (round.RoundNr >= currentGame.Rounds)
                 {
-                    var gameWinner = users?.MaxBy(c => c?.TotalRoundPoints)?.Info ?? new User();
-                    if (gameWinner.Id != 0)
+                    if (users?.Find(u => u.TotalRoundPoints > 0) != null)
                     {
-                        gameWinner.Wins ++;
-                        affectedRows = _userRepository.UpdateUser(gameWinner, out error);
-
-                        if (string.IsNullOrEmpty(error))
+                        var allWinners = users?.FindAll(u => u.TotalRoundPoints == users?.MaxBy(c => c?.TotalRoundPoints).TotalRoundPoints) ?? new List<UserVM>();
+                        foreach (var winnerInGame in allWinners)
                         {
-                            await Clients.Group(roomCode).SendAsync("GameFinished");
+                            winnerInGame.Info.Wins ++;
+                            affectedRows = _userRepository.UpdateUser(winnerInGame.Info, out error);
+
+                            if (!string.IsNullOrEmpty(error))
+                            {
+                                throw new Exception(error);
+                            }
                         }
                     }
+                    await Clients.Group(roomCode).SendAsync("GameFinished");
                 }
-                
-            await Clients.Group(roomCode).SendAsync("RoundEnded");
-            await UsersInRound(round.Id, currentGame.JoinCode);
-            await GameInfo(currentGame.JoinCode);
+
+                await UsersInRound(round.Id, currentGame.JoinCode);
+                await GameInfo(currentGame.JoinCode);
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                await Clients.Group(roomCode).SendAsync("Message", $"Ett fel uppstod: {ex.Message}", "warning");
             }
         }
 
@@ -457,16 +475,23 @@ namespace webbAPI.Hubs
 
                 if (currentGame != null && string.IsNullOrEmpty(error))
                 {
-                    currentGame.IsActive = false;
-                    var affectedRows = _gameRepository.UpdateActiveState(currentGame.Id, currentGame.IsActive, out error);
-
-                    if (affectedRows != 0 || string.IsNullOrEmpty(error))
-                    {
-                        await GameInfo(currentGame.JoinCode);
-                    }
+                    UpdateActiveState(currentGame);
+                    await GameInfo(currentGame.JoinCode);
                 }
                 await Clients.Group(userConn.JoinCode).SendAsync("leaveGame");
             }
+        }
+
+        private void UpdateActiveState(Game currentGame)
+        {
+            currentGame.IsActive = !currentGame.IsActive;
+            var affectedRows = _gameRepository.UpdateActiveState(currentGame.Id, currentGame.IsActive, out string error);
+
+            if (affectedRows == 0 || !string.IsNullOrEmpty(error))
+            {
+                Console.WriteLine(error);
+                throw new Exception(error);
+            } 
         }
 
         public override Task OnDisconnectedAsync(Exception? exception)
@@ -474,7 +499,7 @@ namespace webbAPI.Hubs
             if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? userConn))
             {
                 _sharedDB.Connection.Remove(Context.ConnectionId, out _);
-                Clients.Group(userConn.JoinCode).SendAsync("GameStatus", $"{userConn.Username} har lämnat spelet");
+                Clients.Group(userConn.JoinCode).SendAsync("Message", $"{userConn.Username} har lämnat rummet", "info");
 
                 var usersInGame = _sharedDB.Connection.Where(e => e.Value.JoinCode == userConn.JoinCode).ToList();
 
@@ -484,6 +509,12 @@ namespace webbAPI.Hubs
                     currentGame ??= new Game();
                     currentRound ??= new GameRound();
                     string error = "";
+
+                    if (usersInGame.Count == 0 && currentGame.IsActive)
+                    {
+                        UpdateActiveState(currentGame);
+                        GameInfo(currentGame.JoinCode);
+                    }
 
                     // If game has no round or users
                     if (currentRound.Id == 0 && usersInGame.Count == 0)
@@ -498,11 +529,7 @@ namespace webbAPI.Hubs
                     // if game has no users and round is 1 and round is not finished
                     if ( usersInGame.Count == 0 && currentRound.RoundNr == 1 && currentRound.RoundComplete == false)
                     {
-                        var affectedRows = _gameRepository.Delete(currentGame.Id, out error);
-                        if (affectedRows == 0 || string.IsNullOrEmpty(error))
-                        {
-                            Console.WriteLine("Deleted game");
-                        }
+                        DeleteGame(currentGame);
                     }
 
                     if (currentGame.IsActive && currentRound.Id != 0)
@@ -527,13 +554,12 @@ namespace webbAPI.Hubs
                             var affectedRows = _gameRoundRepository.Delete(currentRound.Id, out error);
                             if (affectedRows == 0 || string.IsNullOrEmpty(error))
                             {
-                                Console.WriteLine("Deleted game");
+                                Console.WriteLine("Deleted round");
                             }
-                        }
-
-                        if ( !string.IsNullOrEmpty(error))
-                        {
-                            Console.WriteLine("Error: ", error);
+                            if ( !string.IsNullOrEmpty(error))
+                            {
+                                Console.WriteLine("Error: ", error);
+                            }
                         }
                     }
                     else {
@@ -542,10 +568,22 @@ namespace webbAPI.Hubs
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.Message);
+                    Clients.Group(userConn.JoinCode).SendAsync("Message", $"Ett fel uppstod: {ex.Message}", "warning");
                 }
             }
             return base.OnDisconnectedAsync(exception);
+        }
+
+        private string DeleteGame(Game currentGame)
+        {
+            string error;
+            var affectedRows = _gameRepository.Delete(currentGame.Id, out error);
+            if (affectedRows == 0 || string.IsNullOrEmpty(error))
+            {
+                Console.WriteLine("Deleted game");
+            }
+
+            return error;
         }
     }
 }

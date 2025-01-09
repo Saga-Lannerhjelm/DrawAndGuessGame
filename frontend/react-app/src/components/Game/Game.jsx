@@ -3,41 +3,49 @@ import { HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
 import { useConnection } from "../../context/ConnectionContext";
 import { useNavigate, useParams } from "react-router-dom";
 import DrawingBoard from "./DrawingBoard";
-import GuessContainer from "./GuessContainer";
+import UserContainer from "./GuessContainer";
 import Users from "./Users";
 import Header from "../Header";
 import GuessForm from "./GuessForm";
 import DrawingInfo from "./DrawingInfo";
 import TopSection from "./TopSection";
 import ResultCard from "./ResultCard";
+import GameMessage from "../GameMessage";
 
 const Game = () => {
-  const { connection } = useConnection();
+  const { connection, activeUserId, users } = useConnection();
   const [roomName, setRoomName] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [isDrawing, setIsDrawing] = useState(false);
   const [gameActive, setGameActive] = useState(false);
   const [round, setRound] = useState(undefined);
+  const [roomOwner, setRoomOwner] = useState(undefined);
   const [showFinalResult, setShowFinalResult] = useState(false);
-  // const [roundStarted, setRoundStarted] = useState(false);
   const [roundComplete, setRoundComplete] = useState(false);
-  const [word, setWord] = useState("");
   const [time, setTime] = useState(30);
   const [userGuesses, setUserGuesses] = useState([]);
+  const [roundNr, setRoundNr] = useState(3);
+  const [gameMessage, setGameMessage] = useState({});
 
   const navigate = useNavigate();
   const params = useParams();
   const timeOutRef = useRef(null);
 
   useEffect(() => {
+    setTimeout(() => {
+      setGameMessage("");
+    }, 3000);
+  }, [gameMessage]);
+
+  useEffect(() => {
     if (connection === undefined) {
-      navigate("/home");
+      navigate("/");
     }
     if (connection) {
       setJoinCode(params.room);
 
-      connection.on("GameCanStart", (canStart) => {
-        // setRound(round + 1);
+      connection.on("Message", (msg, type) => {
+        setGameMessage({ msg: msg, type: type });
       });
 
       connection.on("ReceiveGuess", (guess, userId) => {
@@ -59,10 +67,12 @@ const Game = () => {
       connection.on("receiveGameInfo", (game, round) => {
         setRoomName(game.roomName);
         setGameActive(game.isActive);
+        setRoomOwner(game.creatorId);
+
+        console.log("Round:", round);
 
         if (round.id != 0) {
           setRound(round);
-          setWord(round.word);
 
           setTimeout(() => {
             setRoundComplete(round.roundComplete);
@@ -76,18 +86,12 @@ const Game = () => {
         // console.log(time);
       });
 
-      // connection.on("RoundEnded", (time) => {
-      //   // setRoundStarted(false);
-      // });
-
       connection.on("GameFinished", () => {
         setShowFinalResult(true);
-        // setRound();
       });
 
       connection.on("EndRound", (joinCode) => {
         console.log("in ended round");
-        // setRoundStarted(false);
         connection.invoke("EndRound", joinCode);
       });
 
@@ -117,15 +121,16 @@ const Game = () => {
 
   const leaveRoom = async () => {
     await connection.stop();
-    navigate("/home");
+    navigate("/");
   };
 
-  const startRound = async () => {
+  const startRound = async (roundNr) => {
+    console.log(roundNr);
     if (connection) {
       setTime(30);
       // setRoundStarted(true);
       setRoundComplete(false);
-      await connection.invoke("StartRound", joinCode);
+      await connection.invoke("StartRound", joinCode, parseInt(roundNr));
       // await connection.invoke("SendTimerData", time);
     }
   };
@@ -144,11 +149,16 @@ const Game = () => {
 
   return (
     <>
+      {gameMessage != "" && (
+        <GameMessage msg={gameMessage.msg} type={gameMessage.type} />
+      )}
       <Header
         roomName={roomName}
         joinCode={joinCode}
         onclick={leaveRoom}
         endGame={endGame}
+        roomOwner={roomOwner}
+        activeUserId={activeUserId}
       />
       <div className="game-container">
         <div>
@@ -157,34 +167,58 @@ const Game = () => {
               <ResultCard showGameResult={true} endGame={endGame} />
             ) : (
               <ResultCard
-                startNewRound={startRound}
+                startNewRound={() => startRound(roundNr)}
                 showGameResult={false}
                 roundData={round}
               />
             )
-          ) : gameActive ? (
+          ) : gameActive && round ? (
             <>
-              <TopSection time={time} round={round} />
+              <TopSection time={time} round={round} roundNr={roundNr} />
               <div id="canvas-container">
                 <DrawingBoard
                   gameRoom={joinCode}
                   gameActive={gameActive}
                   isDrawing={isDrawing}
-                  word={word}
+                  round={round}
                 />
               </div>
               {!isDrawing && <GuessForm sendGuess={sendGuess} />}
             </>
+          ) : roomOwner && roomOwner == activeUserId ? (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                startRound(roundNr);
+              }}
+              className="start-round-form"
+            >
+              <div>
+                <label htmlFor="nrInput">Välj antal rundor:</label>
+                <input
+                  id="nrInput"
+                  type="number"
+                  min={3}
+                  max={10}
+                  value={roundNr}
+                  onChange={(e) => setRoundNr(e.target.value)}
+                />
+              </div>
+              <button type="submit" className="btn" disabled={users.length < 3}>
+                {users.length >= 3
+                  ? "Är alla spelare inne? Starta spelet"
+                  : "Spelet måste minst ha tre spelare"}
+              </button>
+            </form>
           ) : (
-            <button onClick={startRound} className="btn">
-              Starta spelet
-            </button>
+            <p>Vänar på att ägaren startar spelet...</p>
           )}
         </div>
-        <GuessContainer
+        <UserContainer
           userIsDrawing={(bool) => setIsDrawing(bool)}
           userGuesses={userGuesses}
           isActive={gameActive}
+          roomOwner={roomOwner}
         />
       </div>
     </>

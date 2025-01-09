@@ -1,18 +1,16 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useConnection } from "../../context/ConnectionContext";
 
 const ResultCard = ({ startNewRound, showGameResult, roundData, endGame }) => {
   const { users, activeUserId } = useConnection();
-  useEffect(() => {
-    users.sort((a, b) => {
-      b.totalPoints - a.totalPoints;
-    });
-  }, []);
+  let sortedUsers = users.sort(
+    (a, b) => b.totalRoundPoints - a.totalRoundPoints
+  );
 
   return (
     <div className="result-box">
       <h2>Resultat {roundData && "För runda " + roundData.roundNr}</h2>
-      {users.map((user, index) => (
+      {sortedUsers.map((user, index) => (
         <div key={index} className="result-user">
           <p>
             {" "}

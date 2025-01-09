@@ -7,39 +7,27 @@
   text-align: center;
 }
 
+html {
+  background: url("./assets/backgroundImage.jpg") no-repeat center center fixed;
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
+}
+
 body {
   margin: 0;
   padding: 0;
   cursor: url("./assets/cursor.svg"), auto;
   height: 100vh;
 }
-
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+button:hover {
+  cursor: pointer;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+button:disabled {
+  background-color: #b074ff72;
+  cursor: not-allowed;
 }
 
 small span {
@@ -78,7 +66,21 @@ form input {
 
 .header {
   background-color: var(--header-color);
-  padding: 1rem 0;
+  padding: 0.5rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header div {
+  display: flex;
+  gap: 1rem;
+}
+
+.header button {
+  border-radius: 0.5rem;
+  border: none;
+  padding: 5px 10px;
 }
 
 .canvas {
@@ -92,6 +94,7 @@ form input {
   display: grid;
   grid-template-columns: 6fr 3fr;
   margin: 1rem 4rem;
+  max-height: 100vh;
 }
 
 .game-container > div:first-child {
@@ -99,17 +102,6 @@ form input {
   grid-template-rows: auto 8fr 2fr;
   height: 80vh;
 }
-/* 
-.user-container {
-  
-}
-
-.users-container ul {
-  text-decoration: none;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-} */
 
 .guess-form {
   display: flex;
@@ -129,13 +121,13 @@ form input {
 .user-container {
   display: flex;
   flex-direction: column;
-  text-align: start;
+  text-align: end;
   gap: 1rem;
   height: 83vh;
   width: 40vw;
   position: sticky;
   right: 4rem;
-  overflow: scroll;
+  /* overflow: scroll; */
 }
 
 .user-container .message-and-user {
@@ -255,6 +247,43 @@ form input {
 
 .result-user p {
   margin: 0.5rem 0;
+}
+
+.start-round-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.start-round-form input {
+  background-color: transparent;
+  color: white;
+  border-bottom: 1px solid white;
+  border-radius: 0;
+  padding: 0;
+  margin: 1rem;
+  text-align: center;
+}
+
+.start-round-form button {
+  width: auto;
+}
+
+.error-container {
+  position: relative;
+  z-index: 10;
+  background-color: #c1313165;
+  color: "white";
+  padding: 1rem;
+  border-radius: 0.5rem;
+  width: auto;
+}
+
+.error-container.info {
+  background-color: #8c31c165;
+}
+
+.error-container.warning {
+  background-color: #c1313165;
 }
 
 .highscore-grid {

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using webbAPI.DataService;
@@ -10,6 +11,7 @@ using webbAPI.Repositories;
 
 namespace webbAPI.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("[controller]")]
     public class UserController(SharedDB sharedDB, UserRepository userRepository) : ControllerBase
@@ -17,21 +19,28 @@ namespace webbAPI.Controllers
         private readonly SharedDB _sharedDB = sharedDB;
         private readonly UserRepository _userRepository = userRepository;
 
-        [HttpPost]
-        public IActionResult AddUser([FromBody] string username)
-        {
-            // Check game does not exist
-            var user = new User
-            {
-                Username = username
-            };
-            int userId = _userRepository.Insert(user, out string error);
+        // [HttpPost]
+        // public IActionResult AddUser([FromBody] string username)
+        // {
+        //     // Check game does not exist
+        //     var user = new User
+        //     {
+        //         Username = username
+        //     };
+        //     int userId = _userRepository.Insert(user, out string error);
 
-            if (userId == 0 || !string.IsNullOrEmpty(error))
-            {
-                return BadRequest();
-            }
-            return Ok(userId);
+        //     if (userId == 0 || !string.IsNullOrEmpty(error))
+        //     {
+        //         return BadRequest();
+        //     }
+        //     return Ok(userId);
+        // }
+
+
+        [HttpGet]
+        public IActionResult Test()
+        {
+            return Ok("Hello world");
         }
 
         [HttpGet]

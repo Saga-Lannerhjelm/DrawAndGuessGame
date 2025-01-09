@@ -1,12 +1,23 @@
 import React from "react";
 
-const Header = ({ roomName, joinCode, onclick, endGame }) => {
+const Header = ({
+  roomName,
+  joinCode,
+  onclick,
+  endGame,
+  roomOwner,
+  activeUserId,
+}) => {
   return (
     <div className="header">
-      <p>{roomName}</p>
-      JoinCode: {joinCode}{" "}
-      <button onClick={() => onclick()}>Lämna spelet</button>
-      <button onClick={() => endGame()}>Avsluta spelet</button>
+      <h4>{roomName}</h4>
+      <div>
+        Anslutningskod: {joinCode}{" "}
+        <button onClick={() => onclick()}>Lämna spelet</button>
+        {roomOwner && roomOwner == activeUserId && (
+          <button onClick={() => endGame()}>Avsluta spelet</button>
+        )}
+      </div>
     </div>
   );
 };

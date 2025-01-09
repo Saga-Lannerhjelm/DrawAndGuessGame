@@ -3,7 +3,7 @@ import { useConnection } from "../../context/ConnectionContext";
 import { useParams } from "react-router-dom";
 import DrawingInfo from "./DrawingInfo";
 
-const DrawingBoard = ({ gameRoom, isDrawing, gameActive, word }) => {
+const DrawingBoard = ({ gameRoom, isDrawing, gameActive, round }) => {
   const [color, setColor] = useState("#ffffff");
 
   const [loading, setLoading] = useState(true);
@@ -19,6 +19,9 @@ const DrawingBoard = ({ gameRoom, isDrawing, gameActive, word }) => {
       connection.on("clearCanvas", () => {
         clearCanvas();
       });
+      // connection.on("receiveChangedWord", (newWord) => {
+      //   round.word = newWord;
+      // });
     }
     clearCanvas();
   }, [connection]);
@@ -49,9 +52,12 @@ const DrawingBoard = ({ gameRoom, isDrawing, gameActive, word }) => {
       const canvas = canvasRef.current;
 
       const handelResize = () => {
-        canvas.width = document.getElementById("canvas-container").offsetWidth;
-        canvas.height =
-          document.getElementById("canvas-container").offsetHeight;
+        canvas.width = window.innerWidth - window.innerWidth / 2;
+        canvas.height = window.innerHeight - window.innerHeight / 3;
+
+        //   canvas.width = document.getElementById("canvas-container").offsetWidth;
+        // canvas.height =
+        //   document.getElementById("canvas-container").offsetHeight;
       };
 
       handelResize();
@@ -131,13 +137,25 @@ const DrawingBoard = ({ gameRoom, isDrawing, gameActive, word }) => {
     const ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   }
+
+  const changeWord = async () => {
+    if (connection) {
+      connection.invoke("RequestNewWord", gameRoom, round);
+      clearCanvas();
+    }
+  };
+
   return (
     <>
       <div>
-        {/* {gameActive &&  */}
-        <canvas ref={canvasRef} className="canvas"></canvas>
-        {/* } */}
-        {isDrawing && <DrawingInfo clearCanvas={sendClearCanvas} word={word} />}
+        {gameActive && <canvas ref={canvasRef} className="canvas"></canvas>}
+        {isDrawing && (
+          <DrawingInfo
+            clearCanvas={sendClearCanvas}
+            word={round.word}
+            changeWord={changeWord}
+          />
+        )}
       </div>
     </>
   );

@@ -4,6 +4,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
+using Newtonsoft.Json;
 using webbAPI.Models;
 
 namespace webbAPI.Repositories
@@ -54,7 +55,14 @@ namespace webbAPI.Repositories
 
                 dbConnection.Open();
 
-                return dbCommand.ExecuteNonQuery();
+                var affectedRows = dbCommand.ExecuteNonQuery();
+
+                if (affectedRows == 0)
+                {
+                    errorMsg = "Inga rader updaterades. Id:t kanske inte finns";
+                }
+
+                return affectedRows;
             }
             catch (Exception e)
             {
@@ -76,7 +84,14 @@ namespace webbAPI.Repositories
 
                 dbConnection.Open();
 
-                return dbCommand.ExecuteNonQuery();
+                var affectedRows = dbCommand.ExecuteNonQuery();
+
+                if (affectedRows == 0)
+                {
+                    errorMsg = "Inga rader togs bort. Id:t kankse inte finns";
+                }
+
+                return affectedRows;
             }
             catch (Exception e)
             {
@@ -119,6 +134,22 @@ namespace webbAPI.Repositories
             {
                 errorMsg = e.Message;
                 return null;
+            }
+        }
+
+        public async Task<string> GetWord() 
+        {
+            // Link to API https://random-word-form.herokuapp.com
+            HttpClient client = new();
+            HttpResponseMessage response = await client.GetAsync("https://random-word-form.herokuapp.com/random/noun");
+
+            if (response.IsSuccessStatusCode)
+            {
+                string apiResp = await response.Content.ReadAsStringAsync();
+                string[] words = JsonConvert.DeserializeObject<string[]>(apiResp) ?? [];
+                return (words?.Length > 0) ? words[0] : "default word";
+            } else {
+                return "Default word";
             }
         }
     }

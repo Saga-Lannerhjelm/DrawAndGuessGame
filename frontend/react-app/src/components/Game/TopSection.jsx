@@ -1,7 +1,7 @@
 import React from "react";
 
-const TopSection = ({ time, round }) => {
-  let totalRounds = 3;
+const TopSection = ({ time, round, roundNr }) => {
+  const totalRounds = roundNr;
   return (
     <div className="top-section">
       <span>
