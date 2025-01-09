@@ -164,6 +164,11 @@ namespace webbAPI.Hubs
                     {
                         string newWord = await _gameRoundRepository.GetWord();
                         round.Word = newWord;
+                        var affectedRows = _gameRoundRepository.Update(round, out error);
+                        if (affectedRows != 0 || string.IsNullOrEmpty(error))
+                        {
+                            await GameInfo(gameRoom);
+                        }
                     }
                 }
             }
