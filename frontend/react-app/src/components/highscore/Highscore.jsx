@@ -1,11 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { useConnection } from "../../context/ConnectionContext";
+import { jwtDecode } from "jwt-decode";
+import { LogLevel } from "@microsoft/signalr";
 
 const Highscore = () => {
   const [usersInList, setUsersInList] = useState([]);
+  const [userId, setUserId] = useState(undefined);
+
+  const { jwt } = useConnection();
 
   useEffect(() => {
     getUsers();
+    if (jwt) {
+      const decoded = jwtDecode(jwt);
+      setUserId(parseInt(decoded.id));
+      console.log(decoded.id);
+    }
   }, []);
 
   const getUsers = async () => {
@@ -37,14 +47,14 @@ const Highscore = () => {
           {usersInList.map((user, index) => (
             <div
               key={index}
-              style={
-                index % 2 === 0
-                  ? { backgroundColor: "rgba(255, 255, 255, 0.05)" }
-                  : {}
-              }
+              style={{
+                backgroundColor:
+                  index % 2 === 0 ? "rgba(255, 255, 255, 0.1)" : "",
+                border: userId === user.id ? "3px solid white" : "",
+              }}
             >
               <p>
-                {index + 1}. {user.username}
+                {index + 1}. {user.username} {userId === user.id ? "(DU)" : ""}
               </p>
               <p>{user.wins}</p>
               <p>{user.totalPoints}</p>

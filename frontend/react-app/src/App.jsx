@@ -16,8 +16,8 @@ function App() {
       <NavBar />
       <ConnectionProvider>
         <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/home" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<Home />} />
           <Route path="/highscore" element={<Highscore />} />
           <Route path="/game/:room" element={<Game />} />
         </Routes>

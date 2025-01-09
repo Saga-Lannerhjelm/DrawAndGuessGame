@@ -11,7 +11,6 @@ using webbAPI.Repositories;
 
 namespace webbAPI.Controllers
 {
-    [Authorize]
     [ApiController]
     [Route("[controller]")]
     public class UserController(SharedDB sharedDB, UserRepository userRepository) : ControllerBase
@@ -35,13 +34,6 @@ namespace webbAPI.Controllers
         //     }
         //     return Ok(userId);
         // }
-
-
-        [HttpGet]
-        public IActionResult Test()
-        {
-            return Ok("Hello world");
-        }
 
         [HttpGet]
         public IActionResult Getusers()
