@@ -14,7 +14,7 @@ using webbAPI.Repositories;
 
 namespace webbAPI.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     [ApiController]
     public class AccountController(IConfiguration config, AccountRepository accountRepository) : ControllerBase
     {

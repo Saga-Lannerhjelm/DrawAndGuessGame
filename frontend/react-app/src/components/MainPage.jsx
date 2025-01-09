@@ -7,9 +7,9 @@ import Cookies from "js-cookie";
 import { jwtDecode } from "jwt-decode";
 
 const Home = () => {
-  // const [userName, setUserName] = useState("");
+  const [userName, setUserName] = useState("");
   const [roomName, setRoomName] = useState("");
-  const [randomUsername, setRandomUsername] = useState("");
+  // const [randomUsername, setRandomUsername] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [loading, setLoading] = useState(true);
   const [gameMessage, setGameMessage] = useState("");
@@ -25,17 +25,18 @@ const Home = () => {
     }, 3000);
   }, [gameMessage]);
 
-  useEffect(() => {
-    getRandomUsername().then((userN) => setRandomUsername(userN));
-  }, [gameMessage]);
+  // useEffect(() => {
+  //   getRandomUsername().then((userN) => setRandomUsername(userN));
+  // }, [gameMessage]);
 
   const createRoom = async (roomName) => {
     const gameRoomCode = Math.round(Math.random() * 100000000);
-    var jwt = Cookies.get("jwt-cookie");
+    const jwt = Cookies.get("jwt-cookie");
     console.log(jwt);
-    var decoded = jwtDecode(jwt);
-    let userId = decoded.id;
-    console.log(userId);
+    const decoded = jwtDecode(jwt);
+    let userId = parseInt(decoded.id);
+    const username = decoded.name;
+    console.log(userId, userName);
 
     // try {
     // userId = await addUser(randomUsername);
@@ -65,7 +66,7 @@ const Home = () => {
         });
 
         if (response.ok) {
-          joinRoom(gameRoomCode, userId, jwt);
+          joinRoom(gameRoomCode, userId, jwt, username);
         } else {
           console.error(
             "Fel vid API-anrop:",
@@ -154,22 +155,22 @@ const Home = () => {
   //   }
   // };
 
-  const joinRoom = async (gameRoomCode, userId, jwt) => {
+  const joinRoom = async (gameRoomCode, userId, jwt, username) => {
     console.log("USerID in join:", userId);
-    if (!loading) {
-      startConnection(randomUsername, gameRoomCode, userId, jwt);
-      setActiveUserId(userId);
-    }
+    console.log("username in join:", username);
+    // if (!loading) {
+    startConnection(gameRoomCode, userId, jwt, username);
+    setActiveUserId(userId);
+    // }
   };
 
-  async function startConnection(userName, gameRoomCode, userId, jwt) {
+  async function startConnection(gameRoomCode, userId, jwt, user) {
     if (!connection) {
       console.log("in start conn");
       const newConnection = new HubConnectionBuilder()
         .withUrl("http://localhost:5034/draw", {
           accessTokenFactory: () => jwt,
         })
-
         .configureLogging(LogLevel.Information)
         .withAutomaticReconnect()
         .build();
@@ -196,7 +197,11 @@ const Home = () => {
       try {
         await newConnection.start();
         const joinCode = gameRoomCode.toString();
-        newConnection.invoke("JoinGame", { id: userId, userName, joinCode });
+        console.log(userId, user, joinCode);
+        newConnection
+          .invoke("JoinGame", { id: userId, username: user, joinCode })
+          .then((test) => console.log(test))
+          .catch((error) => console.log(error));
       } catch (error) {
         console.error();
       }

@@ -10,7 +10,7 @@ const Login = () => {
 
   const login = async (username, password) => {
     try {
-      const response = await fetch("http://localhost:5034/api/Account/login", {
+      const response = await fetch("http://localhost:5034/Account/login", {
         method: "POST",
         headers: {
           Accept: "application/json",

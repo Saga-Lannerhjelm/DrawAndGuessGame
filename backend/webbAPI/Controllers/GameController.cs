@@ -53,6 +53,6 @@ public class GameController : ControllerBase
             return BadRequest(error);
         } 
 
-        return Ok(existingGame.Id != 0 && existingGame.IsActive == false);
+        return Ok(existingGame?.Id != 0 && existingGame?.IsActive == false);
     }
 }

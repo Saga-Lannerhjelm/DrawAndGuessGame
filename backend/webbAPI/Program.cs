@@ -35,7 +35,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
               // If the request is for our hub...
               var path = context.HttpContext.Request.Path;
               if (!string.IsNullOrEmpty(accessToken) &&
-                  (path.StartsWithSegments("/draw")))
+                  path.StartsWithSegments("/draw"))
               {
                   // Read the token out of the query string
                   context.Token = accessToken;
@@ -86,9 +86,7 @@ app.UseAuthentication();
 app.UseCors("react-app");
 app.UseAuthorization();
 
-app.MapControllers();
-
-
 app.MapHub<DrawHub>("/draw");
+app.MapControllers();
 
 app.Run();
