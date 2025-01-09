@@ -23,7 +23,7 @@ const ResultCard = ({ startNewRound, showGameResult, roundData, endGame }) => {
             {showGameResult && index === 0 ? "(vinnare)" : ""}
           </p>
           <p>
-            {user.info.totalPoints} (+{user.round.points} )
+            {user.totalRoundPoints} (+{user.round.points} )
           </p>
         </div>
       ))}

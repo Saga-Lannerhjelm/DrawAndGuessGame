@@ -47,7 +47,7 @@ const Home = () => {
         RoomName: roomName,
         JoinCode: gameRoomCode.toString(),
         IsActive: false,
-        CreatorId: uId,
+        CreatorId: userId,
       };
 
       try {

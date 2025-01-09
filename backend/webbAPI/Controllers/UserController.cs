@@ -18,13 +18,31 @@ namespace webbAPI.Controllers
         private readonly SharedDB _sharedDB = sharedDB;
         private readonly UserRepository _userRepository = userRepository;
 
-        [HttpPost]
-        public async Task<IActionResult> AddUser([FromBody]string username)
-        {
-            //get random 
-            var randomUsername = await _userRepository.GetRandomUsername();
-            username = randomUsername;
+        // [HttpPost]
+        // public async Task<IActionResult> AddUser([FromBody]string username)
+        // {
+        //     //get random 
+        //     var randomUsername = await _userRepository.GetRandomUsername();
+        //     username = randomUsername;
 
+        //     // Check game does not exist
+        //     var users = _userRepository.GetAllUsers(out string error);
+
+        //     if (!string.IsNullOrEmpty(error))
+        //     {
+        //         return BadRequest(error);
+        //     }
+
+        //     if (users.Count == 0)
+        //     {
+        //         return BadRequest(error);
+        //     }
+        //     return Ok(new {userId, username});
+        // }
+
+        [HttpGet]
+        public IActionResult Getusers()
+        {
             // Check game does not exist
             var users = _userRepository.GetAllUsers(out string error);
 
@@ -35,9 +53,10 @@ namespace webbAPI.Controllers
 
             if (users.Count == 0)
             {
-                return BadRequest(error);
+                return BadRequest("No users found");
             }
-            return Ok(new {userId, username});
+
+            return Ok(users);
         }
     }
 }

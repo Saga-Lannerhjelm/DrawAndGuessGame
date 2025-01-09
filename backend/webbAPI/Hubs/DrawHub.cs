@@ -80,65 +80,65 @@ namespace webbAPI.Hubs
                             {
                                 throw new Exception(error);
                             }
+                        }
 
-                            // Get word
-                            string word = "default word";
-                            word = await _gameRoundRepository.GetWord();  
+                        // Get word
+                        string word = "default word";
+                        word = await _gameRoundRepository.GetWord();  
 
-                            // Add a new round to the game
-                            var newGameRound = new GameRound {
-                                GameId = currentGame.Id,
-                                Word = word,
-                                StartTime = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time"))
-                            };
-                            var roundId = _gameRoundRepository.Insert(newGameRound, out error);
+                        // Add a new round to the game
+                        var newGameRound = new GameRound {
+                            GameId = currentGame.Id,
+                            Word = word,
+                            StartTime = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time"))
+                        };
+                        var roundId = _gameRoundRepository.Insert(newGameRound, out error);
 
-                            if (roundId == 0 || !string.IsNullOrEmpty(error))
+                        if (roundId == 0 || !string.IsNullOrEmpty(error))
+                        {
+                            throw new Exception(error);
+                        }
+
+                        // create a new userInRound for each user in the game
+                        var usersInRoundList = new List<UserInRound>();
+                        foreach (var user in allUsersInGame)
+                        {
+                            usersInRoundList.Add(new UserInRound {
+                                UserId = user.Id,
+                                IsDrawing = false,
+                                GameRoundId = roundId,
+                            });
+                        }
+
+                        // Select users that will draw
+                        var rnd = new Random();
+                        int randowmIndexOne = rnd.Next(allUsersInGame.Count);
+                        int randomIndexTwo;
+                        do
+                        {
+                            randomIndexTwo = rnd.Next(allUsersInGame.Count);
+                        } while (randowmIndexOne == randomIndexTwo);
+
+                        // Update IsDrawing to true
+                        usersInRoundList[randowmIndexOne].IsDrawing = true;
+                        usersInRoundList[randomIndexTwo].IsDrawing = true;
+
+                        var drawingUserOne = allUsersInGame[randowmIndexOne];
+                        var drawingUserTwo = allUsersInGame[randomIndexTwo];
+
+                        // Add users to the round
+                        foreach (var userInRound in usersInRoundList)
+                        {
+                            var affectedRows = _userRepository.InsertUserInRound(userInRound, out error);
+
+                            if (affectedRows == 0 || !string.IsNullOrEmpty(error))
                             {
                                 throw new Exception(error);
                             }
-
-                            // create a new userInRound for each user in the game
-                            var usersInRoundList = new List<UserInRound>();
-                            foreach (var user in allUsersInGame)
-                            {
-                                usersInRoundList.Add(new UserInRound {
-                                    UserId = user.Id,
-                                    IsDrawing = false,
-                                    GameRoundId = roundId,
-                                });
-                            }
-
-                            // Select users that will draw
-                            var rnd = new Random();
-                            int randowmIndexOne = rnd.Next(allUsersInGame.Count);
-                            int randomIndexTwo;
-                            do
-                            {
-                                randomIndexTwo = rnd.Next(allUsersInGame.Count);
-                            } while (randowmIndexOne == randomIndexTwo);
-
-                            // Update IsDrawing to true
-                            usersInRoundList[randowmIndexOne].IsDrawing = true;
-                            usersInRoundList[randomIndexTwo].IsDrawing = true;
-
-                            var drawingUserOne = allUsersInGame[randowmIndexOne];
-                            var drawingUserTwo = allUsersInGame[randomIndexTwo];
-
-                            // Add users to the round
-                            foreach (var userInRound in usersInRoundList)
-                            {
-                                affectedRows = _userRepository.InsertUserInRound(userInRound, out error);
-
-                                if (affectedRows == 0 || !string.IsNullOrEmpty(error))
-                                {
-                                    throw new Exception(error);
-                                }
-                            }
-                            await Clients.Group(joinCode).SendAsync("Message", $"{drawingUserOne.Username} och {drawingUserTwo.Username} ritar!", "info");
-                            await UsersInRound(roundId, currentGame.JoinCode);
-                            await GameInfo(joinCode);                     
                         }
+                        await Clients.Group(joinCode).SendAsync("Message", $"{drawingUserOne.Username} och {drawingUserTwo.Username} ritar!", "info");
+                        await UsersInRound(roundId, currentGame.JoinCode);
+                        await GameInfo(joinCode);                     
                     }
                     else {
                         await Clients.Group(joinCode).SendAsync("Message", $"Ett fel uppstod: {error}", "warning");
