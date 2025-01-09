@@ -29,7 +29,7 @@ const Login = () => {
         const data = await response.json();
         setJwt(data);
         // Cookies.set("jwt-cookie", data);
-        navigate("/home");
+        navigate("/");
       }
 
       if (!response.ok) {

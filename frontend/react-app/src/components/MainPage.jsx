@@ -30,7 +30,11 @@ const Home = () => {
       const decoded = jwtDecode(jwt);
       setUserName(decoded.name);
     } else {
-      navigate("/");
+      if (connection) {
+        connection.stop();
+        setConnection();
+      }
+      navigate("/login");
     }
   }, [jwt]);
 
@@ -61,7 +65,7 @@ const Home = () => {
         if (response.ok) {
           joinRoom(gameRoomCode, userId, jwt, username);
         } else if (response.status === 401) {
-          navigate("/");
+          navigate("/login");
         } else {
           console.error(
             "Fel vid API-anrop:",
@@ -115,7 +119,7 @@ const Home = () => {
       const existingUser = await response.json();
       return { gameExists: existingUser, error: null };
     } else if (response.status === 401) {
-      navigate("/");
+      navigate("/login");
     } else {
       console.error(
         "Fel vid API-anrop:",
@@ -189,7 +193,7 @@ const Home = () => {
         });
       } catch (error) {
         if (error.message.includes("401")) {
-          navigate("/");
+          navigate("/login");
         }
       }
     }
