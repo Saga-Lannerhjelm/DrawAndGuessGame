@@ -21,6 +21,26 @@ body {
   cursor: url("./assets/cursor.svg"), auto;
   height: 100vh;
 }
+
+.navbar {
+  background-color: var(--header-color);
+  padding: 1rem 2rem;
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.navbar a {
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.navbar a.active {
+  border-bottom: 2px solid var(--accentcolor);
+  margin-bottom: -2px;
+}
+
 button:hover {
   cursor: pointer;
 }

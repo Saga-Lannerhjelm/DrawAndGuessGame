@@ -1,12 +1,22 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
 const NavBar = () => {
   return (
-    <>
-      <Link to={"/"}>Hem</Link>
-      <Link to={"/highscore"}>Topplista</Link>
-    </>
+    <nav className="navbar">
+      <NavLink
+        to={"/"}
+        className={({ isActive }) => (isActive ? "active" : "")}
+      >
+        Hem
+      </NavLink>
+      <NavLink
+        to={"/highscore"}
+        className={({ isActive }) => (isActive ? "active" : "")}
+      >
+        Topplista
+      </NavLink>
+    </nav>
   );
 };
 
