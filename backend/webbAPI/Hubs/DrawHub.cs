@@ -231,7 +231,6 @@ namespace webbAPI.Hubs
                                         await EndRound(userConn.JoinCode);
                                     } else {
                                         await UsersInRound(currentRound.Id, userConn.JoinCode);
-                                        // await GameInfo(userConn.JoinCode);
                                     }
                                 }
                             }
@@ -324,6 +323,8 @@ namespace webbAPI.Hubs
             await Clients.Group(gameRoom).SendAsync("clearCanvas");
         }
 
+        #region test
+
         public async Task EndRound (string roomCode) 
         {
             try
@@ -343,59 +344,15 @@ namespace webbAPI.Hubs
                     var allGuessingUsers = users?.FindAll(user => !user.Round.IsDrawing) ?? [];
                     // find all that guessed correctly
                     var allCorrectGuessingUsers = allGuessingUsers?.FindAll(user => user.Round.GuessedCorrectly) ?? [];
-
-                    // find the winner
-                    var winner = allGuessingUsers?.Find(user => user.Round.GuessedFirst);
-                    if (winner != null)
-                    {
-                        AddPoints(winner, 5);
-                    }
-
-                    // find all that guessed correctly but not first
-                    var usersGuessedCorrectlyButNotFirst = allCorrectGuessingUsers?.FindAll(user => !user.Round.GuessedFirst) ?? [];
                     
-                    if (usersGuessedCorrectlyButNotFirst.Count != 0 || winner != null)
+                    if (allCorrectGuessingUsers.Count != 0)
                     {
                         // Give points to the rest of the guessing users
-                        if (usersGuessedCorrectlyButNotFirst.Count != 0)
-                        {
-                            foreach (var user in usersGuessedCorrectlyButNotFirst)
-                            {
-                                AddPoints(user, 3);
-                            }
-                        }
+                        givePointsToGuessers(allCorrectGuessingUsers);
 
-                        // Find the users that drew
-                        var artists = users?.FindAll(user => user.Round.IsDrawing) ?? new List<UserVM>();
                         // Give points to artists
-                        foreach (var user in artists)
-                        {
-                            if (drawingAmmounts.Count != 0)
-                            {
-                                // Give most points to the one that drew the most
-                                if (user.Info.Id == drawingAmmounts.MaxBy(e => e.Value).Key)
-                                {
-                                    // Give more points if everyone answered correctly
-                                    if (allGuessingUsers?.Count == allCorrectGuessingUsers.Count)
-                                    {
-                                        AddPoints(user, 4);
-                                        
-                                    } else if (allCorrectGuessingUsers.Count >= 1){
-                                        AddPoints(user, 3);
-                                    }
-                                }
-                                else if (user.Info.Id == drawingAmmounts.MinBy(e => e.Value).Key)
-                                {
-                                if (allGuessingUsers?.Count == allCorrectGuessingUsers.Count)
-                                    {
-                                        AddPoints(user, 3);
-                                        
-                                    } else if (allCorrectGuessingUsers.Count >= 1){
-                                        AddPoints(user, 2);
-                                    }
-                                }
-                            }
-                        }
+                        var artists = users?.FindAll(user => user.Round.IsDrawing) ?? new List<UserVM>();
+                        givePointsDrawers(allGuessingUsers, allCorrectGuessingUsers, artists);
                         drawingAmmounts.Clear();
                     }
 
@@ -403,38 +360,95 @@ namespace webbAPI.Hubs
                     var affectedRows = _gameRoundRepository.Update(round, out error);
                     if (affectedRows == 0 || !string.IsNullOrEmpty(error))
                     {
-                        throw new Exception(error);
+                        await Clients.Group(roomCode).SendAsync("Message", $"Ett fel uppstod: {error}", "warning");
                     }
 
                     // If the last round has been reached 
                     if (round.RoundNr >= currentGame.Rounds)
                     {
-                        if (users?.Find(u => u.TotalRoundPoints > 0) != null)
+                        var updateError = FindWinners(users);
+                        if (updateError != null)
                         {
-                            // If anyonea has gotten points in the round -> find winner
-                            var allWinners = users?.FindAll(u => u.TotalRoundPoints == users?.MaxBy(c => c?.TotalRoundPoints).TotalRoundPoints) ?? new List<UserVM>();
-                            foreach (var winnerInGame in allWinners)
-                            {
-                                winnerInGame.Info.Wins ++;
-                                affectedRows = _userRepository.UpdateUser(winnerInGame.Info, out error);
-
-                                if (!string.IsNullOrEmpty(error))
-                                {
-                                    throw new Exception(error);
-                                }
-                            }
+                            await Clients.Group(roomCode).SendAsync("Message", $"Ett fel uppstod: {updateError}", "warning");
                         }
-                        await Clients.Group(roomCode).SendAsync("GameFinished");  
+                        await Clients.Group(roomCode).SendAsync("GameFinished");
                     }
                     await UsersInRound(round.Id, currentGame.JoinCode);
                     await GameInfo(currentGame.JoinCode);
-                    
                 }
-
             }
             catch (Exception ex)
             {
                 await Clients.Group(roomCode).SendAsync("Message", $"Ett fel uppstod: {ex.Message}", "warning");
+            }
+        }
+
+        private string? FindWinners(List<UserVM>? users)
+        {
+            if (users?.Find(u => u.TotalRoundPoints > 0) != null)
+            {
+                // If anyonea has gotten points in the round -> find winner
+                var allWinners = users?.FindAll(u => u.TotalRoundPoints == users?.MaxBy(c => c?.TotalRoundPoints).TotalRoundPoints) ?? new List<UserVM>();
+                foreach (var winnerInGame in allWinners)
+                {
+                    winnerInGame.Info.Wins++;
+                    var rows = _userRepository.UpdateUser(winnerInGame.Info, out string updateError);
+
+                    if (!string.IsNullOrEmpty(updateError))
+                    {
+                        return updateError;
+                    }
+                }
+            }
+            return null;
+        }
+
+        private void givePointsToGuessers(List<UserVM>? allCorrectGuessingUsers)
+        {
+            var winner = allCorrectGuessingUsers?.Find(user => user.Round.GuessedFirst);
+            foreach (var user in allCorrectGuessingUsers)
+            {
+                if (user == winner)
+                {
+                    AddPoints(user, 5);
+                }
+                AddPoints(user, 3);
+            }
+        }
+
+        private void givePointsDrawers(List<UserVM>? allGuessingUsers, List<UserVM>? allCorrectGuessingUsers, List<UserVM> artists)
+        {
+            foreach (var user in artists)
+            {
+                if (drawingAmmounts.Count != 0)
+                {
+                    // Give most points to the one that drew the most
+                    if (user.Info.Id == drawingAmmounts.MaxBy(e => e.Value).Key)
+                    {
+                        // Give more points if everyone answered correctly
+                        if (allGuessingUsers?.Count == allCorrectGuessingUsers?.Count)
+                        {
+                            AddPoints(user, 4);
+
+                        }
+                        else if (allCorrectGuessingUsers?.Count >= 1)
+                        {
+                            AddPoints(user, 3);
+                        }
+                    }
+                    else if (user.Info.Id == drawingAmmounts.MinBy(e => e.Value).Key)
+                    {
+                        if (allGuessingUsers?.Count == allCorrectGuessingUsers?.Count)
+                        {
+                            AddPoints(user, 3);
+
+                        }
+                        else if (allCorrectGuessingUsers?.Count >= 1)
+                        {
+                            AddPoints(user, 2);
+                        }
+                    }
+                }
             }
         }
 
@@ -449,6 +463,8 @@ namespace webbAPI.Hubs
                 throw new Exception(error);
             }
         }
+
+         #endregion test
 
        
         public async Task EndGame() 
@@ -482,10 +498,12 @@ namespace webbAPI.Hubs
         {
             if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? userConn))
             {
+                // Remove connection from sharedDB and send a message to the group
                 _sharedDB.Connection.Remove(Context.ConnectionId, out _);
                 Clients.Group(userConn.JoinCode).SendAsync("Message", $"{userConn.Username} har lämnat rummet", "info");
 
-                var usersInGame = _sharedDB.Connection.Where(e => e.Value.JoinCode == userConn.JoinCode).ToList();
+                // Find all remaining users in the game
+                var countUsersInGame = _sharedDB.Connection.Count(e => e.Value.JoinCode == userConn.JoinCode);
 
                 try
                 {
@@ -494,30 +512,22 @@ namespace webbAPI.Hubs
                     currentRound ??= new GameRound();
                     string error = "";
 
-                    if (usersInGame.Count == 0 && currentGame.IsActive)
+                    // If no remaining users are in the game and it is marked as active, change the active state to false
+                    if (countUsersInGame == 0 && currentGame.IsActive)
                     {
                         UpdateActiveState(currentGame);
-                        GameInfo(currentGame.JoinCode);
                     }
 
-                    // If game has no round or users
-                    if (currentRound.Id == 0 && usersInGame.Count == 0)
-                    {
-                        var affectedRows = _gameRepository.Delete(currentGame.Id, out error);
-                        if (affectedRows == 0 || string.IsNullOrEmpty(error))
-                        {
-                            Console.WriteLine("Deleted game");
-                        }
-                    }
-
-                    // if game has no users and round is 1 and round is not finished
-                    if ( usersInGame.Count == 0 && currentRound.RoundNr == 1 && currentRound.RoundComplete == false)
+                    // If a game has no round nor remaining users or if game has no users and round is 1 and round is not finished then delete the game
+                    if ((currentRound.Id == 0 && countUsersInGame == 0) || (countUsersInGame == 0 && currentRound.RoundNr == 1 && currentRound.RoundComplete == false))
                     {
                         DeleteGame(currentGame);
                     }
 
+                    // If game is active and has rounds
                     if (currentGame.IsActive && currentRound.Id != 0)
                     {
+                        // Get the current round's users, find the user that left the game
                         var users = _userRepository.GetUsersByRound(currentRound.Id, out error);
                         var disconnectedUser = users?.Find(u => u.Info.Id == userConn.Id) ?? new UserVM();
                         if (disconnectedUser.TotalRoundPoints == 0)
@@ -527,22 +537,22 @@ namespace webbAPI.Hubs
 
                             if (!string.IsNullOrEmpty(error))
                             {
-                                Console.WriteLine("Error: ", error);
+                                Clients.Group(userConn.JoinCode).SendAsync("Message", $"Ett fel uppstod: {error}", "warning");
                             }
                             users?.Remove(disconnectedUser);
                             UsersInRound(currentRound.Id, userConn.JoinCode);    
                         }
-
+                        // If a round has no users and it is not completed
                         if ((users == null || users.Count == 0)&& currentRound.RoundComplete == false) {
                             // Delete game_round
                             var affectedRows = _gameRoundRepository.Delete(currentRound.Id, out error);
                             if (affectedRows == 0 || string.IsNullOrEmpty(error))
                             {
-                                Console.WriteLine("Deleted round");
+                                Clients.Group(userConn.JoinCode).SendAsync("Message", $"Ett fel uppstod: {error}", "warning");
                             }
                             if ( !string.IsNullOrEmpty(error))
                             {
-                                Console.WriteLine("Error: ", error);
+                                Clients.Group(userConn.JoinCode).SendAsync("Message", $"Ett fel uppstod: {error}", "warning");
                             }
                         }
                     }
