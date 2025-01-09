@@ -13,8 +13,8 @@ import NavBar from "./components/Navbar";
 function App() {
   return (
     <>
-      <NavBar />
       <ConnectionProvider>
+        <NavBar />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<Home />} />
