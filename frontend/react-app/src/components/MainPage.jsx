@@ -14,7 +14,7 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [gameMessage, setGameMessage] = useState("");
 
-  const { setConnection, connection, setActiveUserId, setUsers } =
+  const { setConnection, connection, setActiveUserId, setUsers, jwt } =
     useConnection();
 
   const navigate = useNavigate();
@@ -31,21 +31,9 @@ const Home = () => {
 
   const createRoom = async (roomName) => {
     const gameRoomCode = Math.round(Math.random() * 100000000);
-    const jwt = Cookies.get("jwt-cookie");
-    console.log(jwt);
-    const decoded = jwtDecode(jwt);
-    let userId = parseInt(decoded.id);
-    const username = decoded.name;
-    console.log(userId, userName);
+    var { userId, jwtValue, username } = getValuesFromToken();
 
-    // try {
-    // userId = await addUser(randomUsername);
-    //   userId = "";
-    // } catch (error) {
-    //   console.error("Kunde inte lägga till användare:", error);
-    // }
-
-    if (userId) {
+    if (jwtValue) {
       const game = {
         RoomName: roomName,
         JoinCode: gameRoomCode.toString(),
@@ -82,13 +70,14 @@ const Home = () => {
   };
 
   const joinExistingRoom = async () => {
-    let userId;
     try {
-      var { gameExists, error } = await checkIfGameExists();
+      var { gameExists, error } = await checkIfGameExists(jwt);
+
       if (gameExists) {
-        // userId = await addUser(randomUsername);
-        if (userId) {
-          joinRoom(inviteCode, userId);
+        var { userId, jwtValue, username } = getValuesFromToken();
+
+        if (jwtValue) {
+          joinRoom(inviteCode, userId, jwt, username);
         }
       } else {
         if (error) {
@@ -104,12 +93,13 @@ const Home = () => {
     }
   };
 
-  const checkIfGameExists = async () => {
+  const checkIfGameExists = async (jwt) => {
     const response = await fetch("http://localhost:5034/Game/room", {
       method: "POST",
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
+        Authorization: `Bearer  ${jwt}`,
       },
       body: JSON.stringify(inviteCode),
     });
@@ -126,6 +116,19 @@ const Home = () => {
       return { gameExists: false, error: "Ett fel inträffade" };
     }
   };
+
+  function getValuesFromToken() {
+    // const jwtValue = Cookies.get("jwt-cookie");
+    const jwtValue = jwt;
+    let userId;
+    let username;
+    if (jwt) {
+      const decoded = jwtDecode(jwt);
+      userId = parseInt(decoded.id);
+      username = decoded.name;
+    }
+    return { userId, jwtValue, username };
+  }
 
   // const addUser = async (userName) => {
   //   console.log("in add");
@@ -208,23 +211,23 @@ const Home = () => {
     }
   }
 
-  async function getRandomUsername() {
-    try {
-      // Link to API https://github.com/randomusernameapi/randomusernameapi.github.io?tab=readme-ov-file
-      const response = await fetch(
-        "https://usernameapiv1.vercel.app/api/random-usernames"
-      );
+  // async function getRandomUsername() {
+  //   try {
+  //     // Link to API https://github.com/randomusernameapi/randomusernameapi.github.io?tab=readme-ov-file
+  //     const response = await fetch(
+  //       "https://usernameapiv1.vercel.app/api/random-usernames"
+  //     );
 
-      if (!response.ok) throw new Error(`Response status: ${response.status}`);
-      const result = await response.json();
-      return result.usernames[0];
-    } catch (error) {
-      console.error(error);
-      return "Anonymous";
-    } finally {
-      setLoading(false);
-    }
-  }
+  //     if (!response.ok) throw new Error(`Response status: ${response.status}`);
+  //     const result = await response.json();
+  //     return result.usernames[0];
+  //   } catch (error) {
+  //     console.error(error);
+  //     return "Anonymous";
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }
 
   return (
     <>

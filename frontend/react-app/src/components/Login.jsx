@@ -1,12 +1,15 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
+import { useConnection } from "../context/ConnectionContext";
 
 const Login = () => {
   const [username, setUserName] = useState("");
   const [password, setPassword] = useState("");
   const [submitError, setSubmitError] = useState("");
+
   const navigate = useNavigate();
+  const { setJwt } = useConnection();
 
   const login = async (username, password) => {
     try {
@@ -24,8 +27,8 @@ const Login = () => {
 
       if (response.ok) {
         const data = await response.json();
-        Cookies.set("jwt-cookie", data);
-        console.log(data);
+        setJwt(data);
+        // Cookies.set("jwt-cookie", data);
         navigate("/home");
       }
 

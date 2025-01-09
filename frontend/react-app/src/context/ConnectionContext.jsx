@@ -1,13 +1,14 @@
 import React, { createContext, useContext, useState } from "react";
 
-const ConnectionContext = createContext();
+const ApplicationContext = createContext();
 
 export const ConnectionProvider = ({ children }) => {
   const [connection, setConnection] = useState(undefined);
   const [activeUserId, setActiveUserId] = useState("");
   const [users, setUsers] = useState([]);
+  const [jwt, setJwt] = useState("");
   return (
-    <ConnectionContext.Provider
+    <ApplicationContext.Provider
       value={{
         connection,
         setConnection,
@@ -15,11 +16,13 @@ export const ConnectionProvider = ({ children }) => {
         setActiveUserId,
         users,
         setUsers,
+        jwt,
+        setJwt,
       }}
     >
       {children}
-    </ConnectionContext.Provider>
+    </ApplicationContext.Provider>
   );
 };
 
-export const useConnection = () => useContext(ConnectionContext);
+export const useConnection = () => useContext(ApplicationContext);
