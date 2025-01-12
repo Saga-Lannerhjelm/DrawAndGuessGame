@@ -259,28 +259,7 @@ namespace webbAPI.Repositories
                 return null;
             }
         }
-
-        public async Task<string> GetRandomUsername() 
-        {
-            // Link to API https://github.com/randomusernameapi/randomusernameapi.github.io?tab=readme-ov-file
-            HttpClient client = new();
-            HttpResponseMessage response = await client.GetAsync("https://usernameapiv1.vercel.app/api/random-usernames");
-
-            if (response.IsSuccessStatusCode)
-            {
-                var jsonResponse = await response.Content.ReadAsStringAsync();
-                var result = JsonConvert.DeserializeObject<RandomUsernameResponse>(jsonResponse);
-
-                return result?.Usernames?[0] ?? "Anonymous";
-            } else {
-                return "Anonympous";
-            }
-        }
-
-        public class RandomUsernameResponse
-        {
-            public string?[] Usernames { get; set; }
-        }
+        
         public List<User> GetAllUsers (out string errorMsg) 
         {
             string query = "SELECT * FROM users ORDER BY wins DESC, total_points DESC;";
