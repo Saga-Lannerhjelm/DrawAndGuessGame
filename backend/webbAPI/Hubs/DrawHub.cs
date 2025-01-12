@@ -16,17 +16,17 @@ namespace webbAPI.Hubs
         private readonly GameRepository _gameRepository;
         private readonly GameRoundRepository _gameRoundRepository;
         private readonly UserRepository _userRepository;
-        private readonly GameService _gameService;
+        private readonly WordService _wordService;
 
         private static readonly Dictionary<string, Dictionary<int, int>> drawingAmmounts = [];
 
-        public DrawHub (SharedDB sharedDB, GameRepository gameRepository, GameRoundRepository gameRoundRepository, UserRepository userRepository, GameService gameService)
+        public DrawHub (SharedDB sharedDB, GameRepository gameRepository, GameRoundRepository gameRoundRepository, UserRepository userRepository, WordService wordService)
         {
             _sharedDB = sharedDB;
             _gameRepository = gameRepository;
             _gameRoundRepository = gameRoundRepository;
             _userRepository = userRepository;
-            _gameService = gameService;
+            _wordService = wordService;
         }
         public async Task JoinGame (UserConnection userConn) 
         {
@@ -84,7 +84,7 @@ namespace webbAPI.Hubs
 
                         // Get word
                         string word = "default word";
-                        word = await _gameRoundRepository.GetWord();  
+                        word = await _wordService.GetWord();  
 
                         // Add a new round to the game
                         var newGameRound = new GameRound {
@@ -164,7 +164,7 @@ namespace webbAPI.Hubs
                 {
                     if (!users.Any(u => u.Round.GuessedCorrectly))
                     {
-                        string newWord = await _gameRoundRepository.GetWord();
+                        string newWord = await _wordService.GetWord();
                         round.Word = newWord;
                         var affectedRows = _gameRoundRepository.Update(round, out error);
                         if (affectedRows != 0 || string.IsNullOrEmpty(error))

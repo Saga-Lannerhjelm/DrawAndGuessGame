@@ -58,8 +58,9 @@ builder.Services.AddSingleton<SharedDB>();
 builder.Services.AddSingleton<GameRepository>();
 builder.Services.AddSingleton<GameRoundRepository>();
 builder.Services.AddScoped<UserRepository>();
-builder.Services.AddScoped<GameService>();
 builder.Services.AddScoped<AccountRepository>();
+builder.Services.AddScoped<GameService>();
+builder.Services.AddScoped<WordService>();
 
 builder.Services.AddHostedService<GameBackgroundService>();
 
