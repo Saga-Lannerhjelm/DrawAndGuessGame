@@ -19,11 +19,23 @@ const DrawingBoard = ({ gameRoom, isDrawing, gameActive, round }) => {
       connection.on("clearCanvas", () => {
         clearCanvas();
       });
-      // connection.on("receiveChangedWord", (newWord) => {
-      //   round.word = newWord;
-      // });
     }
   }, [connection]);
+
+  useEffect(() => {
+    const fetchColor = async () => {
+      try {
+        const fetchedColor = await getColor();
+        setColor(fetchedColor || "green");
+      } catch (error) {
+        setColor("green");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchColor();
+  }, []);
 
   async function getColor() {
     try {
@@ -33,8 +45,8 @@ const DrawingBoard = ({ gameRoom, isDrawing, gameActive, round }) => {
       );
 
       if (!response.ok) throw new Error(`Response status: ${response.status}`);
-
-      return (await response.json()).hex;
+      const data = await response.json();
+      return data.hex;
     } catch (error) {
       console.error(error);
       return null;
@@ -44,19 +56,12 @@ const DrawingBoard = ({ gameRoom, isDrawing, gameActive, round }) => {
   }
 
   useEffect(() => {
-    if (gameActive) {
-      getColor()
-        .then((color) => setColor(color))
-        .catch(() => setColor("green"));
+    if (gameActive && !loading) {
       const canvas = canvasRef.current;
 
       const handelResize = () => {
         canvas.width = window.innerWidth - window.innerWidth / 2;
         canvas.height = window.innerHeight - window.innerHeight / 3;
-
-        //   canvas.width = document.getElementById("canvas-container").offsetWidth;
-        // canvas.height =
-        //   document.getElementById("canvas-container").offsetHeight;
       };
 
       handelResize();
@@ -100,10 +105,6 @@ const DrawingBoard = ({ gameRoom, isDrawing, gameActive, round }) => {
       }
     }
   }, [connection, gameActive, loading, isDrawing]);
-
-  // useEffect(() => {
-  //   console.log(amountDrawn);
-  // }, [amountDrawn]);
 
   function drawStroke(start, end, color) {
     const canvas = canvasRef.current;
