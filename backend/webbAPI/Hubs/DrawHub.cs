@@ -18,7 +18,7 @@ namespace webbAPI.Hubs
         private readonly UserRepository _userRepository;
         private readonly GameService _gameService;
 
-        private static readonly Dictionary<int, int> drawingAmmounts = [];
+        private static readonly Dictionary<string, Dictionary<int, int>> drawingAmmounts = [];
 
         public DrawHub (SharedDB sharedDB, GameRepository gameRepository, GameRoundRepository gameRoundRepository, UserRepository userRepository, GameService gameService)
         {
@@ -40,8 +40,8 @@ namespace webbAPI.Hubs
                 _sharedDB.Connection[Context.ConnectionId] = userConn;
 
                 await Clients.Group(userConn.JoinCode).SendAsync("GameStatus", "", true);
-                await Clients.OthersInGroup(userConn.JoinCode).SendAsync("Message", $"{userConn.Username} anslöt till spelet", "info");
-                await Clients.Caller.SendAsync("Message", $"Välkommen till spelet!", "info");
+                // await Clients.OthersInGroup(userConn.JoinCode).SendAsync("Message", $"{userConn.Username} anslöt till spelet", "info");
+                // await Clients.Caller.SendAsync("Message", $"Välkommen till spelet!", "info");
 
                 await UsersInGame(userConn.JoinCode);
                 await GameInfo(userConn.JoinCode);
@@ -170,6 +170,7 @@ namespace webbAPI.Hubs
                         if (affectedRows != 0 || string.IsNullOrEmpty(error))
                         {
                             await GameInfo(gameRoom);
+                            await SendClearCanvas(gameRoom);
                         }
                     }
                 }
@@ -184,16 +185,29 @@ namespace webbAPI.Hubs
         {
             if (_sharedDB.Connection.TryGetValue(Context.ConnectionId, out UserConnection? userConn))
             {
-                if (drawingAmmounts.TryGetValue(userConn.Id, out int value))
-                {
-                    drawingAmmounts[userConn.Id] = value + 1;
-                } else 
-                {
-                    drawingAmmounts.Add(userConn.Id, 1);
-                }
+                AddDrawingAmmounts(gameRoom, userConn);
 
-                Console.WriteLine(drawingAmmounts);
                 await Clients.OthersInGroup(gameRoom).SendAsync("Drawing", start, end, color, userConn.Id);
+            }
+        }
+
+        private static void AddDrawingAmmounts(string gameRoom, UserConnection userConn)
+        {
+            if (drawingAmmounts.TryGetValue(gameRoom, out Dictionary<int, int> roomDictionary))
+            {
+                if (roomDictionary.TryGetValue(userConn.Id, out int value))
+                {
+                    roomDictionary[userConn.Id] = value + 1;
+                }
+                else
+                {
+                    roomDictionary.Add(userConn.Id, 1);
+                }
+            }
+            else
+            {
+                drawingAmmounts.Add(gameRoom, []);
+                AddDrawingAmmounts(gameRoom, userConn);
             }
         }
 
@@ -328,6 +342,10 @@ namespace webbAPI.Hubs
         public async Task SendClearCanvas (string gameRoom) 
         {
             await Clients.Group(gameRoom).SendAsync("clearCanvas");
+            if (drawingAmmounts.TryGetValue(gameRoom, out Dictionary<int, int> roomDictionary))
+            {
+                roomDictionary.Clear();
+            } 
         }
 
         #region test
@@ -355,12 +373,17 @@ namespace webbAPI.Hubs
                     if (allCorrectGuessingUsers.Count != 0)
                     {
                         // Give points to the rest of the guessing users
-                        givePointsToGuessers(allCorrectGuessingUsers);
+                        GivePointsToGuessers(allCorrectGuessingUsers);
 
                         // Give points to artists
                         var artists = users?.FindAll(user => user.Round.IsDrawing) ?? new List<UserVM>();
-                        givePointsDrawers(allGuessingUsers, allCorrectGuessingUsers, artists);
-                        drawingAmmounts.Clear();
+                        GivePointsToDrawer(allGuessingUsers, allCorrectGuessingUsers, artists, roomCode);
+
+                        if (drawingAmmounts.TryGetValue(roomCode, out Dictionary<int, int> roomDictionary))
+                        {
+                            roomDictionary.Clear();
+                        } 
+                        
                     }
 
                     // Update gameRound
@@ -394,8 +417,8 @@ namespace webbAPI.Hubs
         {
             if (users?.Find(u => u.TotalRoundPoints > 0) != null)
             {
-                // If anyonea has gotten points in the round -> find winner
-                var allWinners = users?.FindAll(u => u.TotalRoundPoints == users?.MaxBy(c => c?.TotalRoundPoints).TotalRoundPoints) ?? new List<UserVM>();
+                // If anyone has gotten points in the round -> find winner
+                var allWinners = users?.FindAll(u => u.TotalRoundPoints == users?.MaxBy(c => c?.TotalRoundPoints)?.TotalRoundPoints) ?? new List<UserVM>();
                 foreach (var winnerInGame in allWinners)
                 {
                     winnerInGame.Info.Wins++;
@@ -410,7 +433,7 @@ namespace webbAPI.Hubs
             return null;
         }
 
-        private void givePointsToGuessers(List<UserVM>? allCorrectGuessingUsers)
+        private void GivePointsToGuessers(List<UserVM>? allCorrectGuessingUsers)
         {
             var winner = allCorrectGuessingUsers?.Find(user => user.Round.GuessedFirst);
             foreach (var user in allCorrectGuessingUsers)
@@ -423,39 +446,42 @@ namespace webbAPI.Hubs
             }
         }
 
-        private void givePointsDrawers(List<UserVM>? allGuessingUsers, List<UserVM>? allCorrectGuessingUsers, List<UserVM> artists)
+        private void GivePointsToDrawer(List<UserVM>? allGuessingUsers, List<UserVM>? allCorrectGuessingUsers, List<UserVM> artists, string roomCode)
         {
             foreach (var user in artists)
             {
-                if (drawingAmmounts.Count != 0)
+                if (drawingAmmounts.TryGetValue(roomCode, out Dictionary<int, int> roomDictionary))
                 {
-                    // Give most points to the one that drew the most
-                    if (user.Info.Id == drawingAmmounts.MaxBy(e => e.Value).Key)
+                    if (roomDictionary.Count != 0)
                     {
-                        // Give more points if everyone answered correctly
-                        if (allGuessingUsers?.Count == allCorrectGuessingUsers?.Count)
+                        // Give most points to the one that drew the most
+                        if (user.Info.Id == roomDictionary.MaxBy(e => e.Value).Key)
                         {
-                            AddPoints(user, 4);
+                            // Give more points if everyone answered correctly
+                            if (allGuessingUsers?.Count == allCorrectGuessingUsers?.Count)
+                            {
+                                AddPoints(user, 4);
 
+                            }
+                            else if (allCorrectGuessingUsers?.Count >= 1)
+                            {
+                                AddPoints(user, 3);
+                            }
                         }
-                        else if (allCorrectGuessingUsers?.Count >= 1)
+                        else if (user.Info.Id == roomDictionary.MinBy(e => e.Value).Key)
                         {
-                            AddPoints(user, 3);
+                            if (allGuessingUsers?.Count == allCorrectGuessingUsers?.Count)
+                            {
+                                AddPoints(user, 3);
+
+                            }
+                            else if (allCorrectGuessingUsers?.Count >= 1)
+                            {
+                                AddPoints(user, 2);
+                            }
                         }
                     }
-                    else if (user.Info.Id == drawingAmmounts.MinBy(e => e.Value).Key)
-                    {
-                        if (allGuessingUsers?.Count == allCorrectGuessingUsers?.Count)
-                        {
-                            AddPoints(user, 3);
-
-                        }
-                        else if (allCorrectGuessingUsers?.Count >= 1)
-                        {
-                            AddPoints(user, 2);
-                        }
-                    }
-                }
+                } 
             }
         }
 
