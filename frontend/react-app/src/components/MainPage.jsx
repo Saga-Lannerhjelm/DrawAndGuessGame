@@ -144,17 +144,12 @@ const Home = () => {
   }
 
   const joinRoom = async (gameRoomCode, userId, jwt, username) => {
-    console.log("USerID in join:", userId);
-    console.log("username in join:", username);
-    // if (!loading) {
     startConnection(gameRoomCode, userId, jwt, username);
     setActiveUserId(userId);
-    // }
   };
 
   async function startConnection(gameRoomCode, userId, jwt, user) {
     if (!connection) {
-      console.log("in start conn");
       const newConnection = new HubConnectionBuilder()
         .withUrl("http://localhost:5034/draw", {
           accessTokenFactory: () => jwt,
@@ -164,8 +159,9 @@ const Home = () => {
         .build();
 
       newConnection.on("GameStatus", (msg, isSuccess) => {
-        console.log("GameStatus", msg);
-        setGameMessage(msg);
+        if (msg) {
+          setGameMessage(msg);
+        }
 
         if (isSuccess) {
           setConnection(newConnection);
@@ -185,7 +181,6 @@ const Home = () => {
       try {
         await newConnection.start();
         const joinCode = gameRoomCode.toString();
-        console.log(userId, user, joinCode);
         newConnection.invoke("JoinGame", {
           id: userId,
           username: user,

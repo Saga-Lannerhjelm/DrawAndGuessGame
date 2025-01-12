@@ -15,6 +15,7 @@ namespace webbAPI.Services
         private readonly GameRepository _gameRepository = gameRepository;
         private readonly GameRoundRepository _gameRoundRepository = gameRoundRepository;
         private readonly UserRepository _userRepository = userRepository;
+        
 
         // public async Task<(bool gameIsFinished, Game game, GameRound round)> EndRound(string roomCode, Dictionary<int, int> drawingAmmounts)
         // {
@@ -110,23 +111,23 @@ namespace webbAPI.Services
         //     return (false, currentGame, round);
         // }
 
-        private void GetGameAndRound(string roomCode, out Game currentGame, out GameRound? currentRound)
-        {
-            currentGame = _gameRepository.GetGameByJoinCode(roomCode, out string error);
-            currentGame ??= new Game();
+        // private void GetGameAndRound(string roomCode, out Game currentGame, out GameRound? currentRound)
+        // {
+        //     currentGame = _gameRepository.GetGameByJoinCode(roomCode, out string error);
+        //     currentGame ??= new Game();
 
-            if (currentGame.Id == 0 && !string.IsNullOrEmpty(error))
-            {
-                throw new Exception(error);
-            }
+        //     if (currentGame.Id == 0 && !string.IsNullOrEmpty(error))
+        //     {
+        //         throw new Exception(error);
+        //     }
             
-            currentRound = _gameRoundRepository.GetGameRoundByGameId(currentGame.Id, out error);
+        //     currentRound = _gameRoundRepository.GetGameRoundByGameId(currentGame.Id, out error);
 
-            if (currentRound == null || !string.IsNullOrEmpty(error))
-            {
-                throw new Exception(error);
-            }
-        }
+        //     if (currentRound == null || !string.IsNullOrEmpty(error))
+        //     {
+        //         throw new Exception(error);
+        //     }
+        // }
 
         //  private void AddPoints(UserVM user, int points)
         // {

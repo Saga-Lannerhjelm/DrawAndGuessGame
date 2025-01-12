@@ -1,19 +1,20 @@
 import React, { useEffect, useRef, useState } from "react";
-import { HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
 import { useConnection } from "../../context/ConnectionContext";
 import { useNavigate, useParams } from "react-router-dom";
 import DrawingBoard from "./DrawingBoard";
 import UserContainer from "./GuessContainer";
-import Users from "./Users";
 import Header from "../Header";
 import GuessForm from "./GuessForm";
-import DrawingInfo from "./DrawingInfo";
 import TopSection from "./TopSection";
 import ResultCard from "./ResultCard";
 import GameMessage from "../GameMessage";
 
 const Game = () => {
   const { connection, activeUserId, users } = useConnection();
+  const navigate = useNavigate();
+  const params = useParams();
+  const timeOutRef = useRef(null);
+
   const [roomName, setRoomName] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [isDrawing, setIsDrawing] = useState(false);
@@ -26,10 +27,6 @@ const Game = () => {
   const [userGuesses, setUserGuesses] = useState([]);
   const [roundNr, setRoundNr] = useState(3);
   const [gameMessage, setGameMessage] = useState({});
-
-  const navigate = useNavigate();
-  const params = useParams();
-  const timeOutRef = useRef(null);
 
   useEffect(() => {
     setTimeout(() => {
@@ -48,6 +45,24 @@ const Game = () => {
         setGameMessage({ msg: msg, type: type });
       });
 
+      connection.on("receiveGameInfo", (game, round) => {
+        setRoomName(game.roomName);
+        setGameActive(game.isActive);
+        setRoomOwner(game.creatorId);
+        if (round.id != 0) {
+          setRound(round);
+
+          setTimeout(() => {
+            setRoundComplete(round.roundComplete);
+          }, 1000);
+        }
+      });
+
+      connection.on("ReceiveTimerData", (time) => {
+        time = time.length > 1 ? "0" + time : time;
+        setTime(time);
+      });
+
       connection.on("ReceiveGuess", (guess, userId) => {
         setUserGuesses((prevGuesses) => {
           const existingGuessIndex = prevGuesses.findIndex(
@@ -61,47 +76,38 @@ const Game = () => {
             return [...prevGuesses, { userId, guess }];
           }
         });
-        displayMessage(userId);
+        displayGuess(userId);
       });
 
-      connection.on("receiveGameInfo", (game, round) => {
-        setRoomName(game.roomName);
-        setGameActive(game.isActive);
-        setRoomOwner(game.creatorId);
-
-        console.log("Round:", round);
-
-        if (round.id != 0) {
-          setRound(round);
-
-          setTimeout(() => {
-            setRoundComplete(round.roundComplete);
-          }, 1000);
-        }
-      });
-
-      connection.on("ReceiveTimerData", (time) => {
-        time = time.length > 1 ? "0" + time : time;
-        setTime(time);
-        // console.log(time);
+      connection.on("EndRound", (joinCode) => {
+        connection.invoke("EndRound", joinCode);
       });
 
       connection.on("GameFinished", () => {
         setShowFinalResult(true);
       });
 
-      connection.on("EndRound", (joinCode) => {
-        console.log("in ended round");
-        connection.invoke("EndRound", joinCode);
-      });
-
       connection.on("leaveGame", () => {
-        connection.stop();
+        leaveGame();
       });
     }
   }, [connection]);
 
-  const displayMessage = (userId) => {
+  const startRound = async (roundNr) => {
+    if (connection) {
+      setTime(30);
+      setRoundComplete(false);
+      await connection.invoke("StartRound", joinCode, parseInt(roundNr));
+    }
+  };
+
+  const sendGuess = async (guess) => {
+    if (connection) {
+      await connection.invoke("SendGuess", guess.toLowerCase());
+    }
+  };
+
+  const displayGuess = (userId) => {
     if (timeOutRef.current) {
       clearTimeout(timeOutRef.current);
     }
@@ -119,25 +125,10 @@ const Game = () => {
     }, 4000);
   };
 
-  const leaveRoom = async () => {
-    await connection.stop();
-    navigate("/");
-  };
-
-  const startRound = async (roundNr) => {
-    console.log(roundNr);
+  const leaveGame = async () => {
     if (connection) {
-      setTime(30);
-      // setRoundStarted(true);
-      setRoundComplete(false);
-      await connection.invoke("StartRound", joinCode, parseInt(roundNr));
-      // await connection.invoke("SendTimerData", time);
-    }
-  };
-
-  const sendGuess = async (guess) => {
-    if (connection) {
-      await connection.invoke("SendGuess", guess.toLowerCase());
+      await connection.stop();
+      navigate("/");
     }
   };
 
@@ -149,13 +140,13 @@ const Game = () => {
 
   return (
     <>
-      {gameMessage != "" && (
+      {gameMessage.msg !== undefined && (
         <GameMessage msg={gameMessage.msg} type={gameMessage.type} />
       )}
       <Header
         roomName={roomName}
         joinCode={joinCode}
-        onclick={leaveRoom}
+        onclick={leaveGame}
         endGame={endGame}
         roomOwner={roomOwner}
         activeUserId={activeUserId}
@@ -211,7 +202,7 @@ const Game = () => {
               </button>
             </form>
           ) : (
-            <p>Vänar på att ägaren startar spelet...</p>
+            <p>Väntar på att ägaren startar spelet...</p>
           )}
         </div>
         <UserContainer

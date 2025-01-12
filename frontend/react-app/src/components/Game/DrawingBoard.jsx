@@ -9,7 +9,7 @@ const DrawingBoard = ({ gameRoom, isDrawing, gameActive, round }) => {
   const [loading, setLoading] = useState(true);
   const canvasRef = useRef(null);
 
-  const { connection } = useConnection();
+  const { connection, users } = useConnection();
 
   useEffect(() => {
     if (connection) {
@@ -23,7 +23,6 @@ const DrawingBoard = ({ gameRoom, isDrawing, gameActive, round }) => {
       //   round.word = newWord;
       // });
     }
-    clearCanvas();
   }, [connection]);
 
   async function getColor() {
@@ -141,7 +140,7 @@ const DrawingBoard = ({ gameRoom, isDrawing, gameActive, round }) => {
   const changeWord = async () => {
     if (connection) {
       connection.invoke("RequestNewWord", gameRoom, round);
-      clearCanvas();
+      sendClearCanvas();
     }
   };
 
@@ -154,6 +153,7 @@ const DrawingBoard = ({ gameRoom, isDrawing, gameActive, round }) => {
             clearCanvas={sendClearCanvas}
             word={round.word}
             changeWord={changeWord}
+            users={users}
           />
         )}
       </div>

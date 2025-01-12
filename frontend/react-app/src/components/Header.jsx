@@ -13,9 +13,10 @@ const Header = ({
       <h4>{roomName}</h4>
       <div>
         Anslutningskod: {joinCode}{" "}
-        <button onClick={() => onclick()}>Lämna spelet</button>
-        {roomOwner && roomOwner == activeUserId && (
+        {roomOwner && roomOwner == activeUserId ? (
           <button onClick={() => endGame()}>Avsluta spelet</button>
+        ) : (
+          <button onClick={() => onclick()}>Lämna spelet</button>
         )}
       </div>
     </div>

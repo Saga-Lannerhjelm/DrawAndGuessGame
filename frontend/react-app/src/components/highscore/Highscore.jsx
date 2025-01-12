@@ -2,12 +2,14 @@ import React, { useEffect, useState } from "react";
 import { useConnection } from "../../context/ConnectionContext";
 import { jwtDecode } from "jwt-decode";
 import { LogLevel } from "@microsoft/signalr";
+import { useNavigate } from "react-router-dom";
 
 const Highscore = () => {
   const [usersInList, setUsersInList] = useState([]);
   const [userId, setUserId] = useState(undefined);
 
-  const { jwt } = useConnection();
+  const { jwt, users } = useConnection();
+  const navigate = useNavigate();
 
   useEffect(() => {
     getUsers();
@@ -15,8 +17,10 @@ const Highscore = () => {
       const decoded = jwtDecode(jwt);
       setUserId(parseInt(decoded.id));
       console.log(decoded.id);
+    } else {
+      navigate("/login");
     }
-  }, []);
+  }, [jwt, users]);
 
   const getUsers = async () => {
     try {

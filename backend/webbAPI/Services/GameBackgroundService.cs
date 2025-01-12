@@ -45,7 +45,10 @@ namespace webbAPI.Services
                                     await _hubContext.Clients.Group(game.JoinCode).SendAsync("ReceiveTimerData", timerValue);
                                     if (timerValue <= 0)
                                     {
-                                        await _hubContext.Clients.Group(game.JoinCode).SendAsync("EndRound", game.JoinCode);
+                                         var users = _sharedDB.Connection
+                                        .Where(g => g.Value.JoinCode == game.JoinCode).ToList();
+                                        var userConnectionId = users.Select((users) => users.Key).ToList()[0];
+                                        await _hubContext.Clients.Client(userConnectionId).SendAsync("EndRound", game.JoinCode);
                                     }
                                 }
                             }

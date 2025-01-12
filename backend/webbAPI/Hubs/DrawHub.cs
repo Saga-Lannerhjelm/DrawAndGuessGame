@@ -170,7 +170,7 @@ namespace webbAPI.Hubs
                         if (affectedRows != 0 || string.IsNullOrEmpty(error))
                         {
                             await GameInfo(gameRoom);
-                            await SendClearCanvas(gameRoom);
+                            // await SendClearCanvas(gameRoom);
                         }
                     }
                 }
@@ -341,11 +341,11 @@ namespace webbAPI.Hubs
 
         public async Task SendClearCanvas (string gameRoom) 
         {
-            await Clients.Group(gameRoom).SendAsync("clearCanvas");
             if (drawingAmmounts.TryGetValue(gameRoom, out Dictionary<int, int> roomDictionary))
             {
                 roomDictionary.Clear();
-            } 
+            }   
+            await Clients.Group(gameRoom).SendAsync("clearCanvas");
         }
 
         #region test
@@ -385,7 +385,6 @@ namespace webbAPI.Hubs
                             {
                                 roomDictionary.Clear();
                             } 
-                            
                         }
 
                         // Update gameRound
