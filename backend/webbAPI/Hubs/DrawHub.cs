@@ -358,54 +358,58 @@ namespace webbAPI.Hubs
                 currentGame ??= new Game();
                 round ??= new GameRound();
 
-                // set round to completed
-                round.RoundComplete = true;
-
-                // Get users in the round
-                var users = _userRepository.GetUsersByRound(round.Id, out string error);
-                if (users != null || string.IsNullOrEmpty(error))
+                if (!round.RoundComplete)
                 {
-                    // find alla guessing users
-                    var allGuessingUsers = users?.FindAll(user => !user.Round.IsDrawing) ?? [];
-                    // find all that guessed correctly
-                    var allCorrectGuessingUsers = allGuessingUsers?.FindAll(user => user.Round.GuessedCorrectly) ?? [];
-                    
-                    if (allCorrectGuessingUsers.Count != 0)
+                    // set round to completed
+                    round.RoundComplete = true;
+
+                    // Get users in the round
+                    var users = _userRepository.GetUsersByRound(round.Id, out string error);
+                    if (users != null || string.IsNullOrEmpty(error))
                     {
-                        // Give points to the rest of the guessing users
-                        GivePointsToGuessers(allCorrectGuessingUsers);
-
-                        // Give points to artists
-                        var artists = users?.FindAll(user => user.Round.IsDrawing) ?? new List<UserVM>();
-                        GivePointsToDrawer(allGuessingUsers, allCorrectGuessingUsers, artists, roomCode);
-
-                        if (drawingAmmounts.TryGetValue(roomCode, out Dictionary<int, int> roomDictionary))
-                        {
-                            roomDictionary.Clear();
-                        } 
+                        // find alla guessing users
+                        var allGuessingUsers = users?.FindAll(user => !user.Round.IsDrawing) ?? [];
+                        // find all that guessed correctly
+                        var allCorrectGuessingUsers = allGuessingUsers?.FindAll(user => user.Round.GuessedCorrectly) ?? [];
                         
-                    }
-
-                    // Update gameRound
-                    var affectedRows = _gameRoundRepository.Update(round, out error);
-                    if (affectedRows == 0 || !string.IsNullOrEmpty(error))
-                    {
-                        await Clients.Group(roomCode).SendAsync("Message", $"Ett fel uppstod: {error}", "warning");
-                    }
-
-                    // If the last round has been reached 
-                    if (round.RoundNr >= currentGame.Rounds)
-                    {
-                        var updateError = FindWinners(users);
-                        if (updateError != null)
+                        if (allCorrectGuessingUsers.Count != 0)
                         {
-                            await Clients.Group(roomCode).SendAsync("Message", $"Ett fel uppstod: {updateError}", "warning");
+                            // Give points to the rest of the guessing users
+                            GivePointsToGuessers(allCorrectGuessingUsers);
+
+                            // Give points to artists
+                            var artists = users?.FindAll(user => user.Round.IsDrawing) ?? new List<UserVM>();
+                            GivePointsToDrawer(allGuessingUsers, allCorrectGuessingUsers, artists, roomCode);
+
+                            if (drawingAmmounts.TryGetValue(roomCode, out Dictionary<int, int> roomDictionary))
+                            {
+                                roomDictionary.Clear();
+                            } 
+                            
                         }
-                        await Clients.Group(roomCode).SendAsync("GameFinished");
+
+                        // Update gameRound
+                        var affectedRows = _gameRoundRepository.Update(round, out error);
+                        if (affectedRows == 0 || !string.IsNullOrEmpty(error))
+                        {
+                            await Clients.Group(roomCode).SendAsync("Message", $"Ett fel uppstod: {error}", "warning");
+                        }
+
+                        // If the last round has been reached 
+                        if (round.RoundNr >= currentGame.Rounds)
+                        {
+                            var updateError = FindWinners(users);
+                            if (updateError != null)
+                            {
+                                await Clients.Group(roomCode).SendAsync("Message", $"Ett fel uppstod: {updateError}", "warning");
+                            }
+                            await Clients.Group(roomCode).SendAsync("GameFinished");
+                        }
+                        await UsersInRound(round.Id, currentGame.JoinCode);
+                        await GameInfo(currentGame.JoinCode);
                     }
-                    await UsersInRound(round.Id, currentGame.JoinCode);
-                    await GameInfo(currentGame.JoinCode);
                 }
+
             }
             catch (Exception ex)
             {
