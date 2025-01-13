@@ -16,6 +16,7 @@ const DrawingBoard = ({ gameRoom, isDrawing, gameActive, round }) => {
       connection.on("Drawing", (start, end, color) => {
         drawStroke(start, end, color);
       });
+
       connection.on("clearCanvas", () => {
         clearCanvas();
       });

@@ -15,12 +15,14 @@ const Game = () => {
   const params = useParams();
   const timeOutRef = useRef(null);
 
-  const [roomName, setRoomName] = useState("");
   const [joinCode, setJoinCode] = useState("");
+  const [currentGame, setCurrentGame] = useState({
+    roomName: "",
+    isActive: false,
+    roomOwner: undefined,
+  });
   const [isDrawing, setIsDrawing] = useState(false);
-  const [gameActive, setGameActive] = useState(false);
   const [round, setRound] = useState(undefined);
-  const [roomOwner, setRoomOwner] = useState(undefined);
   const [showFinalResult, setShowFinalResult] = useState(false);
   const [roundComplete, setRoundComplete] = useState(false);
   const [time, setTime] = useState(30);
@@ -46,9 +48,7 @@ const Game = () => {
       });
 
       connection.on("receiveGameInfo", (game, round) => {
-        setRoomName(game.roomName);
-        setGameActive(game.isActive);
-        setRoomOwner(game.creatorId);
+        setCurrentGame(game);
         if (round.id != 0) {
           setRound(round);
 
@@ -97,6 +97,7 @@ const Game = () => {
     if (connection) {
       setTime(30);
       setRoundComplete(false);
+      setUserGuesses();
       await connection.invoke("StartRound", joinCode, parseInt(roundNr));
     }
   };
@@ -144,11 +145,11 @@ const Game = () => {
         <GameMessage msg={gameMessage.msg} type={gameMessage.type} />
       )}
       <Header
-        roomName={roomName}
+        roomName={currentGame.roomName}
         joinCode={joinCode}
         onclick={leaveGame}
         endGame={endGame}
-        roomOwner={roomOwner}
+        roomOwner={currentGame.creatorId}
         activeUserId={activeUserId}
       />
       <div className="game-container">
@@ -163,20 +164,20 @@ const Game = () => {
                 roundData={round}
               />
             )
-          ) : gameActive && round ? (
+          ) : currentGame.isActive && round ? (
             <>
               <TopSection time={time} round={round} roundNr={roundNr} />
               <div id="canvas-container">
                 <DrawingBoard
                   gameRoom={joinCode}
-                  gameActive={gameActive}
+                  gameActive={currentGame.isActive}
                   isDrawing={isDrawing}
                   round={round}
                 />
               </div>
               {!isDrawing && <GuessForm sendGuess={sendGuess} />}
             </>
-          ) : roomOwner && roomOwner == activeUserId ? (
+          ) : currentGame.creatorId && currentGame.creatorId == activeUserId ? (
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -208,8 +209,8 @@ const Game = () => {
         <UserContainer
           userIsDrawing={(bool) => setIsDrawing(bool)}
           userGuesses={userGuesses}
-          isActive={gameActive}
-          roomOwner={roomOwner}
+          isActive={currentGame.isActive}
+          roomOwner={currentGame.creatorId}
         />
       </div>
     </>

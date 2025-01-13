@@ -53,10 +53,8 @@ const Register = () => {
       const result = await response.json();
       return result.usernames[0];
     } catch (error) {
-      console.error(error);
+      setSubmitError(error);
       return "Anonymous";
-    } finally {
-      // setLoading(false);
     }
   };
 
@@ -113,11 +111,6 @@ const Register = () => {
           >
             Logga in
           </button>
-          <Link to="/register">
-            <small>
-              Har du inget konto? <span>Registrera dig!</span>
-            </small>
-          </Link>
         </form>
       </div>
     </>

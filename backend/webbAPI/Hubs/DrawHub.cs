@@ -33,16 +33,13 @@ namespace webbAPI.Hubs
             // If game exist
             var existingGame = _gameRepository.GetGameByJoinCode(userConn.JoinCode, out string error) ?? new Game();
 
-            if (existingGame?.Id != 0 && string.IsNullOrEmpty(error) && !existingGame.IsActive)
+            if (existingGame?.Id != 0 && existingGame != null && string.IsNullOrEmpty(error) && !existingGame.IsActive)
             {
-                await Groups.AddToGroupAsync(Context.ConnectionId, userConn.JoinCode);
                 // Add user (to game)
+                await Groups.AddToGroupAsync(Context.ConnectionId, userConn.JoinCode);
                 _sharedDB.Connection[Context.ConnectionId] = userConn;
 
                 await Clients.Group(userConn.JoinCode).SendAsync("GameStatus", "", true);
-                // await Clients.OthersInGroup(userConn.JoinCode).SendAsync("Message", $"{userConn.Username} anslöt till spelet", "info");
-                // await Clients.Caller.SendAsync("Message", $"Välkommen till spelet!", "info");
-
                 await UsersInGame(userConn.JoinCode);
                 await GameInfo(userConn.JoinCode);
             }
@@ -54,6 +51,7 @@ namespace webbAPI.Hubs
 
         public async Task StartRound(string joinCode, int roundNr)
         {
+            //Hämtar alla spelar i rummet
             var allUsersInGame = _sharedDB.Connection.Values
             .Where(g => g.JoinCode == joinCode).ToList();
 
@@ -83,8 +81,7 @@ namespace webbAPI.Hubs
                         }
 
                         // Get word
-                        string word = "default word";
-                        word = await _wordService.GetWord();  
+                        string word = await _wordService.GetWord();  
 
                         // Add a new round to the game
                         var newGameRound = new GameRound {
@@ -170,7 +167,6 @@ namespace webbAPI.Hubs
                         if (affectedRows != 0 || string.IsNullOrEmpty(error))
                         {
                             await GameInfo(gameRoom);
-                            // await SendClearCanvas(gameRoom);
                         }
                     }
                 }
@@ -218,7 +214,6 @@ namespace webbAPI.Hubs
                 try
                 {
                     GetGameAndRound(userConn.JoinCode, out Game? currentGame, out GameRound? currentRound);
-                    currentGame ??= new Game();
                     currentRound ??= new GameRound();
 
                     // Om gissa rätt
@@ -243,7 +238,6 @@ namespace webbAPI.Hubs
 
                                 // Update user
                                 var affectedRows = _userRepository.UpdateUserInRound(guessingUser.Round, out error);
-
                                 if (affectedRows != 0 || string.IsNullOrEmpty(error))
                                 {
                                     // Om alla som inte ritar har gissar rätt avslutas rundan
@@ -257,12 +251,12 @@ namespace webbAPI.Hubs
                             }
                             // Skicka gissningen till klienterna
                             await Clients.Caller.SendAsync("ReceiveGuess", guess, userConn.Id);
-                            await Clients.OthersInGroup(currentGame.JoinCode).SendAsync("ReceiveGuess", "Gissade rätt", userConn.Id);
+                            await Clients.OthersInGroup(userConn.JoinCode).SendAsync("ReceiveGuess", "Gissade rätt", userConn.Id);
                         }
                     }
                     else
                     {
-                        await Clients.Group(currentGame.JoinCode).SendAsync("ReceiveGuess", guess, userConn.Id);
+                        await Clients.Group(userConn.JoinCode).SendAsync("ReceiveGuess", guess, userConn.Id);
                     }
                 }
                 catch (Exception ex)
@@ -292,18 +286,11 @@ namespace webbAPI.Hubs
 
         public Task? UsersInGame(string gameRoom) 
         {
-            try
-            {
-                var users = _sharedDB.Connection
-                .Where(g => g.Value.JoinCode == gameRoom).ToList();
-                var userValues = users.Select((users) => users.Value);
+            var users = _sharedDB.Connection
+            .Where(g => g.Value.JoinCode == gameRoom).ToList();
+            var userValues = users.Select((users) => users.Value);
 
-                return Clients.Group(gameRoom).SendAsync("UsersInGame", userValues);
-            }
-            catch (Exception)
-            {
-                return null;
-            }
+            return Clients.Group(gameRoom).SendAsync("UsersInGame", userValues);
         }
 
         public Task UsersInRound (int roundId, string joinCode) 
@@ -320,12 +307,9 @@ namespace webbAPI.Hubs
 
         public Task GameInfo(string joinCode) 
         {
-            string error = "";
-            var currentGame = new Game();
+            var currentGame = _gameRepository.GetGameByJoinCode(joinCode, out string error) ?? new Game();
+
             var currentRound = new GameRound();
-
-            currentGame = _gameRepository.GetGameByJoinCode(joinCode, out error);
-
             if (currentGame != null && string.IsNullOrEmpty(error))
             {
                 currentRound = _gameRoundRepository.GetGameRoundByGameId(currentGame.Id, out error);
@@ -357,12 +341,10 @@ namespace webbAPI.Hubs
                 GetGameAndRound(roomCode, out Game? currentGame, out GameRound? round);
                 currentGame ??= new Game();
                 round ??= new GameRound();
-
                 if (!round.RoundComplete)
                 {
                     // set round to completed
                     round.RoundComplete = true;
-
                     // Get users in the round
                     var users = _userRepository.GetUsersByRound(round.Id, out string error);
                     if (users != null || string.IsNullOrEmpty(error))
@@ -371,29 +353,24 @@ namespace webbAPI.Hubs
                         var allGuessingUsers = users?.FindAll(user => !user.Round.IsDrawing) ?? [];
                         // find all that guessed correctly
                         var allCorrectGuessingUsers = allGuessingUsers?.FindAll(user => user.Round.GuessedCorrectly) ?? [];
-                        
                         if (allCorrectGuessingUsers.Count != 0)
                         {
                             // Give points to the rest of the guessing users
                             GivePointsToGuessers(allCorrectGuessingUsers);
-
                             // Give points to artists
                             var artists = users?.FindAll(user => user.Round.IsDrawing) ?? new List<UserVM>();
                             GivePointsToDrawer(allGuessingUsers, allCorrectGuessingUsers, artists, roomCode);
-
                             if (drawingAmmounts.TryGetValue(roomCode, out Dictionary<int, int> roomDictionary))
                             {
                                 roomDictionary.Clear();
                             } 
                         }
-
                         // Update gameRound
                         var affectedRows = _gameRoundRepository.Update(round, out error);
                         if (affectedRows == 0 || !string.IsNullOrEmpty(error))
                         {
                             await Clients.Group(roomCode).SendAsync("Message", $"Ett fel uppstod: {error}", "warning");
                         }
-
                         // If the last round has been reached 
                         if (round.RoundNr >= currentGame.Rounds)
                         {

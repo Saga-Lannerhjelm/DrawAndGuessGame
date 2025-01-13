@@ -25,7 +25,7 @@ namespace webbAPI.Services
             {
                 try
                 {
-                    var games = _gameRepository.GetActiveGames(out string error) ?? new List<Game>();
+                    var games = _gameRepository.GetActiveGames(out string error) ?? [];
 
                     if (games.Count != 0 || string.IsNullOrEmpty(error))
                     {

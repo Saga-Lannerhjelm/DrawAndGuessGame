@@ -159,7 +159,6 @@ form input {
   width: 40vw;
   position: sticky;
   right: 4rem;
-  /* overflow: scroll; */
 }
 
 .user-container .message-and-user {
@@ -338,6 +337,17 @@ div h4:nth-child(2),
 div p:nth-child(3),
 div h4:nth-child(3) {
   text-align: center;
+}
+
+.word-to-draw {
+  flex-direction: row !important;
+  gap: 1rem;
+}
+
+.word-to-draw button {
+  padding: 0.5rem;
+  color: white;
+  background-color: gray;
 }
 
 @media screen and (max-width: 780px) {

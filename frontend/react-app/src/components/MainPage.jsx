@@ -39,7 +39,11 @@ const Home = () => {
   }, [jwt]);
 
   const createRoom = async (roomName) => {
-    const gameRoomCode = Math.round(Math.random() * 100000000);
+    let gameRoomCode;
+    do {
+      gameRoomCode = Math.round(Math.random() * 100000000);
+    } while (gameRoomCode.length < 8);
+
     var { userId, jwtValue, username } = getValuesFromToken();
 
     if (jwtValue) {

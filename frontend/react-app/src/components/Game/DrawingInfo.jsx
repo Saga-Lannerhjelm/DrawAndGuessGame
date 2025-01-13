@@ -17,8 +17,12 @@ const DrawingInfo = ({ clearCanvas, word, changeWord, users }) => {
         <p>
           {artists[0].info.username} och {artists[1].info.username} ritar
         </p>
-        <p>Rita en: {word.toUpperCase()}</p>
-        <button onClick={changeWord}>Ändra ord</button>
+        <div className="word-to-draw">
+          <p>Rita en: {word.toUpperCase()}</p>
+          <button onClick={changeWord} className="btn">
+            Ändra ord
+          </button>
+        </div>
       </div>
       <button className="btn" onClick={clearCanvas}>
         Rensa
