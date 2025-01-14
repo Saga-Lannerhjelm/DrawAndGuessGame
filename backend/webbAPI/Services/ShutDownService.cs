@@ -1,5 +1,3 @@
-
-
 using Microsoft.AspNetCore.SignalR;
 using webbAPI.Hubs;
 
@@ -25,3 +23,4 @@ public class ShutdownService(IHostApplicationLifetime applicationLifetime, IHubC
         return Task.CompletedTask;
     }
 }
+
