@@ -97,7 +97,7 @@ const Game = () => {
     if (connection) {
       setTime(30);
       setRoundComplete(false);
-      setUserGuesses();
+      setUserGuesses([]);
       await connection.invoke("StartRound", joinCode, parseInt(roundNr));
     }
   };
