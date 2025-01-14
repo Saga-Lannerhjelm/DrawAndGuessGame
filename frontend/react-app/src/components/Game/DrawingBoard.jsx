@@ -84,7 +84,7 @@ const DrawingBoard = ({ gameRoom, isDrawing, gameActive, round }) => {
           };
 
           if (penDown && connection && !loading) {
-            drawStroke(start, end, "red");
+            drawStroke(start, end, "#b074ff");
             connection.invoke("Drawing", start, end, color, gameRoom);
           }
           prevPoint = { x: x, y: y };
