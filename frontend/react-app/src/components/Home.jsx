@@ -41,7 +41,7 @@ const Home = () => {
     let gameRoomCode;
     do {
       gameRoomCode = Math.round(Math.random() * 100000000);
-    } while (gameRoomCode.length < 8);
+    } while (gameRoomCode.toString().length < 8);
 
     var { userId, jwtValue, username } = getValuesFromToken();
 
