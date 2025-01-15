@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using Newtonsoft.Json;
 using webbAPI.DataService;
 using webbAPI.Models;
 using webbAPI.Models.ViewModels;

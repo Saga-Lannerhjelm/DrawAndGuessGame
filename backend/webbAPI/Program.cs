@@ -32,7 +32,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
           {
               var accessToken = context.Request.Query["access_token"];
 
-              // If the request is for our hub...
               var path = context.HttpContext.Request.Path;
               if (!string.IsNullOrEmpty(accessToken) &&
                   path.StartsWithSegments("/draw"))
@@ -50,19 +49,18 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddHostedService<GameBackgroundService>();
 builder.Services.AddHostedService<ShutdownService>();
 
 builder.Services.AddSignalR();
-builder.Services.AddSingleton<SharedDB>();
 
+builder.Services.AddSingleton<SharedDB>();
 builder.Services.AddSingleton<GameRepository>();
 builder.Services.AddSingleton<GameRoundRepository>();
 builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<AccountRepository>();
-builder.Services.AddScoped<GameService>();
 builder.Services.AddScoped<WordService>();
 
-builder.Services.AddHostedService<GameBackgroundService>();
 
 builder.Services.AddCors(opt => {
     opt.AddPolicy("react-app", builder => {

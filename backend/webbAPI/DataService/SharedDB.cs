@@ -11,8 +11,6 @@ namespace webbAPI.DataService
     {
         private readonly ConcurrentDictionary<string, UserConnection> _connection = new();
         public ConcurrentDictionary<string, UserConnection> Connection => _connection;
-
-        private readonly ConcurrentBag<Game> _createdGames = new();
-        public ConcurrentBag<Game> CreatedGames => _createdGames;
+     
     }
 }

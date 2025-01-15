@@ -10,7 +10,6 @@ import { jwtDecode } from "jwt-decode";
 const Home = () => {
   const [userName, setUserName] = useState("");
   const [roomName, setRoomName] = useState("");
-  // const [randomUsername, setRandomUsername] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [gameMessage, setGameMessage] = useState("");
 

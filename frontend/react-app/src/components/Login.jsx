@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import Cookies from "js-cookie";
+import { useNavigate } from "react-router-dom";
 import { useConnection } from "../context/ConnectionContext";
 
 const Login = () => {

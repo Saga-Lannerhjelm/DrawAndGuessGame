@@ -1,10 +1,5 @@
-using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
-using Newtonsoft.Json;
 using webbAPI.Models;
 using webbAPI.Models.ViewModels;
 
@@ -206,7 +201,6 @@ namespace webbAPI.Repositories
                                 Username = reader["username"].ToString() ?? "",
                                 TotalPoints = (int)reader["total_points"],
                                 Wins = (int)reader["wins"],
-                                // ActiveGameId = reader["active_game_id"] != DBNull.Value ? (int)reader["active_game_id"] : (int?)null,
                             },
                             TotalRoundPoints = (int)reader["totalPointsFromGame"]
                         }

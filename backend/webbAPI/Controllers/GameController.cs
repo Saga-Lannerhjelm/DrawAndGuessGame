@@ -9,16 +9,10 @@ namespace webbAPI.Controllers;
 [Authorize]
 [ApiController]
 [Route("[controller]")]
-public class GameController : ControllerBase
+public class GameController(SharedDB sharedDB, GameRepository gameRepository) : ControllerBase
 {
-    private readonly SharedDB _sharedDB;
-    private readonly GameRepository _gameRepository;
-
-    public GameController (SharedDB sharedDB, GameRepository gameRepository)
-    {
-        _sharedDB = sharedDB;
-        _gameRepository = gameRepository;
-    }
+    private readonly SharedDB _sharedDB = sharedDB;
+    private readonly GameRepository _gameRepository = gameRepository;
 
     [HttpPost]
     public IActionResult CreateGame([FromBody] Game game)
@@ -44,7 +38,7 @@ public class GameController : ControllerBase
     [HttpPost ("room")]
     public IActionResult IsGameExisting([FromBody] string joinCode)
     {
-        // Check game does not exist
+        // Check if game does not exist
         string error = "";
         var existingGame = _gameRepository.GetGameByJoinCode(joinCode, out error);
 

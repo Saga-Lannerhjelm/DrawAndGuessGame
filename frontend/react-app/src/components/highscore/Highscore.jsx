@@ -16,7 +16,6 @@ const Highscore = () => {
     if (jwt) {
       const decoded = jwtDecode(jwt);
       setUserId(parseInt(decoded.id));
-      console.log(decoded.id);
     } else {
       navigate("/login");
     }

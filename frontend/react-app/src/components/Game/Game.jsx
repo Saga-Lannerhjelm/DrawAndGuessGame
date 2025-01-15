@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useConnection } from "../../context/ConnectionContext";
 import { useNavigate, useParams } from "react-router-dom";
 import DrawingBoard from "./DrawingBoard";
-import UserContainer from "./GuessContainer";
+import UserContainer from "./UserContainer";
 import Header from "../Header";
 import GuessForm from "./GuessForm";
 import TopSection from "./TopSection";
@@ -112,7 +112,7 @@ const Game = () => {
     if (timeOutRef.current) {
       clearTimeout(timeOutRef.current);
     }
-    // bara det senaste skrivna meddelandet försvinner
+
     timeOutRef.current = setTimeout(() => {
       setUserGuesses((prevGuesses) => {
         const existingGuessIndex = prevGuesses.findIndex(

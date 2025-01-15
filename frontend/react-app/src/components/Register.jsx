@@ -59,7 +59,6 @@ const Register = () => {
   };
 
   const useRandomUsername = async () => {
-    console.log("in get");
     let userN = await getRandomUsername();
     userN = userN.substring(0, userN.length - 1);
     setUserName(userN);
