@@ -373,7 +373,7 @@ namespace webbAPI.Hubs
                         // If the last round has been reached 
                         if (round.RoundNr >= currentGame.Rounds)
                         {
-                            var updateError = FindWinners(users);
+                            var updateError = FindWinners(round.Id);
                             if (updateError != null)
                             {
                                 await Clients.Group(roomCode).SendAsync("Message", $"Ett fel uppstod: {updateError}", "warning");
@@ -392,20 +392,24 @@ namespace webbAPI.Hubs
             }
         }
 
-        private string? FindWinners(List<UserVM>? users)
+        private string? FindWinners(int roundId)
         {
-            if (users?.Find(u => u.TotalRoundPoints > 0) != null)
+            var users = _userRepository.GetUsersByRound(roundId, out string error);
+            if (users != null || string.IsNullOrEmpty(error))
             {
-                // If anyone has gotten points in the round -> find winner
-                var allWinners = users?.FindAll(u => u.TotalRoundPoints == users?.MaxBy(c => c?.TotalRoundPoints)?.TotalRoundPoints) ?? new List<UserVM>();
-                foreach (var winnerInGame in allWinners)
+                if (users?.Find(u => u.TotalRoundPoints > 0) != null || users?.Find(u => u.Round.Points > 0) != null)
                 {
-                    winnerInGame.Info.Wins++;
-                    var rows = _userRepository.UpdateUser(winnerInGame.Info, out string updateError);
-
-                    if (!string.IsNullOrEmpty(updateError))
+                    // If anyone has gotten points in the round -> find winner
+                    var allWinners = users?.FindAll(u => u.TotalRoundPoints == users?.MaxBy(c => c?.TotalRoundPoints)?.TotalRoundPoints) ?? [] ;
+                    foreach (var winnerInGame in allWinners)
                     {
-                        return updateError;
+                        winnerInGame.Info.Wins++;
+                        var rows = _userRepository.UpdateUser(winnerInGame.Info, out string updateError);
+
+                        if (!string.IsNullOrEmpty(updateError))
+                        {
+                            return updateError;
+                        }
                     }
                 }
             }
