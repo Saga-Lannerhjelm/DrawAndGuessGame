@@ -32,7 +32,7 @@ namespace webbAPI.Services
                                 var currentTime =  TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time")); 
                                 var roundStartTime = round.StartTime;
                                 var pastSeconds = Math.Floor((currentTime - roundStartTime).TotalSeconds);
-                                var roundTime = 30;
+                                var roundTime = 45;
 
                                 if (pastSeconds <= roundTime)
                                 {

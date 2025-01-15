@@ -25,7 +25,7 @@ const Game = () => {
   const [round, setRound] = useState(undefined);
   const [showFinalResult, setShowFinalResult] = useState(false);
   const [roundComplete, setRoundComplete] = useState(false);
-  const [time, setTime] = useState(30);
+  const [time, setTime] = useState(45);
   const [userGuesses, setUserGuesses] = useState([]);
   const [roundNr, setRoundNr] = useState(3);
   const [gameMessage, setGameMessage] = useState({});
